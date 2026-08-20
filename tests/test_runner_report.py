@@ -148,82 +148,130 @@ class TestFormatting:
         assert "_No data._" in _table(["a"], [])
 
 
-class TestWriteReport:
-    @pytest.fixture
-    def results(self):
-        return {
-            "run_id": "TEST",
-            "environment": {
-                "platform": "test-os", "cpu_count": 4, "python": "3.13.0",
-                "timestamp_utc": "2026-01-01T00:00:00Z",
+@pytest.fixture
+def sample_results():
+    return {
+        "run_id": "TEST",
+        "environment": {
+            "platform": "test-os", "cpu_count": 4, "python": "3.13.0",
+            "timestamp_utc": "2026-01-01T00:00:00Z",
+        },
+        "parity_tier": {"vcpu": "0.5"},
+        "settings": {
+            "iterations": 10, "warmup_iterations": 2, "repeats": 1,
+            "batch_size": 100, "concurrency_levels": [1], "read_ratio": 0.8,
+        },
+        "dataset": {
+            "name": "D", "source_url": "http://x", "node_count": 10,
+            "relationship_count": 20, "sampled": False,
+            "nodes_with_known_year": 5, "year_coverage_pct": 50.0,
+            "nodes_csv_sha256": "a" * 64, "edges_csv_sha256": "b" * 64,
+        },
+        "plan": {},
+        "parity_check": {
+            "status": "pass",
+            "workloads": {"1-hop": {"values": {"A": 5}, "agree": True}},
+        },
+        "platforms": [
+            {
+                "id": "a", "name": "A", "query_language": "Cypher",
+                "spec": {"tier": "Free", "vcpu": "0.5", "ram": "256 MB",
+                         "storage": "1 GB", "observable": {"status": "not observable"}},
+                "indexes": ["X.y"],
+                "load": {"nodes_per_second": 100.0, "relationships_per_second": 200.0,
+                         "total_seconds": 1.0, "method": "driver"},
+                "verification": {"nodes_actual": 10, "relationships_actual": 20,
+                                 "complete": True},
+                "cold_start_ms": {"1-hop": 5.0},
+                "workloads": {"1-hop": {"p50": 1.0, "p95": 2.0}},
+                "workload_results": {"1-hop": 5},
+                "concurrency": [{"clients": 1, "throughput_qps": 50.0, "p50_ms": 1.0,
+                                 "p95_ms": 2.0, "p99_ms": 3.0, "reads": 40,
+                                 "writes": 10, "errors": 0}],
+                "variance": {}, "errors": [], "skipped": None,
             },
-            "parity_tier": {"vcpu": "0.5"},
-            "settings": {
-                "iterations": 10, "warmup_iterations": 2, "repeats": 1,
-                "batch_size": 100, "concurrency_levels": [1], "read_ratio": 0.8,
+            {
+                "id": "b", "name": "B", "query_language": "unknown", "spec": {},
+                "indexes": [], "load": None, "verification": None,
+                "cold_start_ms": {}, "workloads": {}, "workload_results": {},
+                "concurrency": [], "variance": [], "errors": [],
+                "skipped": "not configured (missing: uri)",
             },
-            "dataset": {
-                "name": "D", "source_url": "http://x", "node_count": 10,
-                "relationship_count": 20, "sampled": False,
-                "nodes_with_known_year": 5, "year_coverage_pct": 50.0,
-                "nodes_csv_sha256": "a" * 64, "edges_csv_sha256": "b" * 64,
-            },
-            "plan": {},
-            "parity_check": {
-                "status": "pass",
-                "workloads": {"1-hop": {"values": {"A": 5}, "agree": True}},
-            },
-            "platforms": [
-                {
-                    "id": "a", "name": "A", "query_language": "Cypher",
-                    "spec": {"tier": "Free", "vcpu": "0.5", "ram": "256 MB",
-                             "storage": "1 GB", "observable": {"status": "not observable"}},
-                    "indexes": ["X.y"],
-                    "load": {"nodes_per_second": 100.0, "relationships_per_second": 200.0,
-                             "total_seconds": 1.0, "method": "driver"},
-                    "verification": {"nodes_actual": 10, "relationships_actual": 20,
-                                     "complete": True},
-                    "cold_start_ms": {"1-hop": 5.0},
-                    "workloads": {"1-hop": {"p50": 1.0, "p95": 2.0}},
-                    "workload_results": {"1-hop": 5},
-                    "concurrency": [{"clients": 1, "throughput_qps": 50.0, "p50_ms": 1.0,
-                                     "p95_ms": 2.0, "p99_ms": 3.0, "reads": 40,
-                                     "writes": 10, "errors": 0}],
-                    "variance": {}, "errors": [], "skipped": None,
-                },
-                {
-                    "id": "b", "name": "B", "query_language": "unknown", "spec": {},
-                    "indexes": [], "load": None, "verification": None,
-                    "cold_start_ms": {}, "workloads": {}, "workload_results": {},
-                    "concurrency": [], "variance": [], "errors": [],
-                    "skipped": "not configured (missing: uri)",
-                },
-            ],
-        }
+        ],
+    }
 
-    def test_report_written_with_sections(self, results, tmp_path):
-        path = write_report(results, tmp_path)
+
+class TestWriteReport:
+    def test_report_written_with_sections(self, sample_results, tmp_path):
+        path = write_report(sample_results, tmp_path)
         text = path.read_text()
         for heading in ("# Benchmark results", "## Environment", "## Dataset",
                         "## Result parity check", "## Ingest throughput",
                         "## Traversal latency", "## Footprint"):
             assert heading in text
 
-    def test_skipped_platform_appears_in_report(self, results, tmp_path):
-        text = write_report(results, tmp_path).read_text()
+    def test_skipped_platform_appears_in_report(self, sample_results, tmp_path):
+        text = write_report(sample_results, tmp_path).read_text()
         assert "not configured (missing: uri)" in text
         assert "Errors and skipped platforms" in text
 
-    def test_charts_rendered(self, results, tmp_path):
-        write_report(results, tmp_path)
+    def test_charts_rendered(self, sample_results, tmp_path):
+        write_report(sample_results, tmp_path)
         charts = list((tmp_path / "charts").glob("*.png"))
         assert {c.name for c in charts} >= {"ingest_throughput.png", "traversal_p50.png"}
 
-    def test_incomplete_load_is_flagged_loudly(self, results, tmp_path):
-        results["platforms"][0]["verification"]["complete"] = False
-        text = write_report(results, tmp_path).read_text()
+    def test_incomplete_load_is_flagged_loudly(self, sample_results, tmp_path):
+        sample_results["platforms"][0]["verification"]["complete"] = False
+        text = write_report(sample_results, tmp_path).read_text()
         assert "**NO**" in text
 
-    def test_parity_mismatch_flagged_loudly(self, results, tmp_path):
-        results["parity_check"]["workloads"]["1-hop"]["agree"] = False
-        assert "**NO**" in table_parity(results)
+    def test_parity_mismatch_flagged_loudly(self, sample_results):
+        sample_results["parity_check"]["workloads"]["1-hop"]["agree"] = False
+        assert "**NO**" in table_parity(sample_results)
+
+
+class TestReadmeInjection:
+    """The README's results matrix is generated, so it cannot go stale."""
+
+    def test_injects_between_markers(self, sample_results, tmp_path):
+        from bench.report import README_END, README_START, inject_readme
+
+        readme = tmp_path / "README.md"
+        readme.write_text(f"# Title\n\n{README_START}\n\nplaceholder\n\n{README_END}\n\n## After\n")
+        assert inject_readme(sample_results, readme) is True
+
+        text = readme.read_text()
+        assert "placeholder" not in text
+        assert "### Result parity" in text
+        # Content outside the markers must survive untouched.
+        assert text.startswith("# Title")
+        assert text.rstrip().endswith("## After")
+
+    def test_missing_markers_is_a_no_op(self, sample_results, tmp_path):
+        from bench.report import inject_readme
+
+        readme = tmp_path / "README.md"
+        readme.write_text("# No markers here\n")
+        assert inject_readme(sample_results, readme) is False
+        assert readme.read_text() == "# No markers here\n"
+
+    def test_missing_file_is_a_no_op(self, sample_results, tmp_path):
+        from bench.report import inject_readme
+
+        assert inject_readme(sample_results, tmp_path / "absent.md") is False
+
+    def test_reinjection_is_idempotent(self, sample_results, tmp_path):
+        from bench.report import README_END, README_START, inject_readme
+
+        readme = tmp_path / "README.md"
+        readme.write_text(f"# T\n\n{README_START}\n\nold\n\n{README_END}\n\n## Tail\n")
+        inject_readme(sample_results, readme)
+        first = readme.read_text()
+        inject_readme(sample_results, readme)
+        assert readme.read_text() == first
+
+    def test_parity_mismatch_warns_in_readme_section(self, sample_results):
+        from bench.report import build_results_section
+
+        sample_results["parity_check"]["status"] = "MISMATCH"
+        assert "Result parity FAILED" in build_results_section(sample_results)
