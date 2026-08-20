@@ -264,7 +264,7 @@ parity table stays truthful.
 | Command | Effect |
 |---|---|
 | `make quick` | Short smoke run — verifies the harness, not for reporting |
-| `make test` | 89 unit tests |
+| `make test` | Run the unit test suite |
 | `make stats` | Live container memory/CPU against the caps |
 | `make report` | Rebuild tables and charts from existing `results.json` |
 | `make down` | Stop containers and delete their volumes |
@@ -356,7 +356,7 @@ src/bench/
   report.py               Markdown tables and charts
   cli.py                  python -m bench
 scripts/                  Readiness polling
-tests/                    89 unit tests
+tests/                    Unit tests for stats, dataset, config, concurrency, runner
 results/                  results.json, REPORT.md, charts/
 ```
 
