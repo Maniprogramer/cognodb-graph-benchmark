@@ -128,3 +128,51 @@ class TestSweep:
             CountingAdapter, FakePlan(), [2], 0.4, 0.0, cleanup_adapter=LyingCleanup()
         )
         assert any("cleanup mismatch" in s for s in results[0].error_samples)
+
+
+class TestHangResistance:
+    """A benchmark harness must never hang; a recorded timeout beats a stuck run."""
+
+    def test_stuck_worker_is_abandoned_and_reported(self):
+        class HangingAdapter:
+            def __init__(self):
+                pass
+
+            def connect(self):
+                pass
+
+            def close(self):
+                pass
+
+            def one_hop(self, node):
+                time.sleep(30)  # simulates a response that never arrives
+                return 1
+
+            def insert_edge(self, src, dst):
+                time.sleep(30)
+
+        started = time.perf_counter()
+        result = run_mixed_workload(
+            HangingAdapter, FakePlan(), clients=2, duration_seconds=0.5,
+            join_grace_seconds=0.5,
+        )
+        elapsed = time.perf_counter() - started
+
+        # Must return promptly rather than waiting on the stuck workers.
+        assert elapsed < 10, f"harness hung for {elapsed:.1f}s"
+        assert result.errors >= 1
+        assert any("did not finish" in e for e in result.error_samples)
+
+    def test_deadline_starts_after_workers_connect(self):
+        """Slow connects must not consume the measurement window."""
+
+        class SlowConnectAdapter(CountingAdapter):
+            def connect(self):
+                time.sleep(0.4)
+
+        result = run_mixed_workload(
+            SlowConnectAdapter, FakePlan(), clients=2, duration_seconds=0.5
+        )
+        # With the deadline set before connecting, the window would already be
+        # spent and no operations would run at all.
+        assert result.total_operations > 0

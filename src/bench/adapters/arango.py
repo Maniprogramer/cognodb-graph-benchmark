@@ -81,7 +81,10 @@ class ArangoAdapter(GraphAdapter):
     def connect(self) -> None:
         if self._db is not None:
             return
-        self._client = ArangoClient(hosts=self.config["uri"])
+        self._client = ArangoClient(
+            hosts=self.config["uri"],
+            request_timeout=float(self.config.get("query_timeout", 60)),
+        )
         sys_db = self._client.db(
             "_system", username=self.config["user"], password=self.config["password"]
         )

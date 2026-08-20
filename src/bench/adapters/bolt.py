@@ -69,6 +69,8 @@ class BoltAdapter(GraphAdapter):
             auth=(self.config["user"], self.config["password"]),
             max_connection_pool_size=self.config.get("pool_size", 50),
             connection_timeout=self.config.get("connection_timeout", 30),
+            connection_acquisition_timeout=self.config.get("query_timeout", 60),
+            max_transaction_retry_time=self.config.get("query_timeout", 60),
         )
         self._driver.verify_connectivity()
         self._connected = True

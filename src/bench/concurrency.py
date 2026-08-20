@@ -62,14 +62,25 @@ def run_mixed_workload(
     duration_seconds: float,
     read_ratio: float = 0.8,
     seed: int = 1337,
+    join_grace_seconds: float | None = None,
 ) -> ConcurrencyResult:
     """Drive `clients` workers for `duration_seconds` against one platform."""
     latencies: list[float] = []
     errors: list[str] = []
     counters = {"reads": 0, "writes": 0}
     lock = threading.Lock()
-    stop_at = time.perf_counter() + duration_seconds
-    barrier = threading.Barrier(clients + 1)
+    # The measurement window opens when the barrier releases, not when the
+    # threads are created: connecting 40 clients can take longer than the window
+    # itself, and a deadline started before that would expire during setup and
+    # record zero operations. The barrier's action runs in whichever thread
+    # arrives last, before any thread is released, so the deadline is always set
+    # exactly once and is visible to every worker the moment it wakes.
+    deadline: list[float] = []
+
+    def start_clock() -> None:
+        deadline.append(time.perf_counter() + duration_seconds)
+
+    barrier = threading.Barrier(clients + 1, action=start_clock)
 
     def worker(worker_id: int) -> None:
         rng = random.Random(seed + worker_id)
@@ -88,6 +99,7 @@ def run_mixed_workload(
             return
 
         barrier.wait()  # all workers start measuring together
+        stop_at = deadline[0]
         while time.perf_counter() < stop_at:
             is_read = rng.random() < read_ratio
             t0 = time.perf_counter()
@@ -120,10 +132,28 @@ def run_mixed_workload(
         t.start()
 
     barrier.wait()
-    started = time.perf_counter()
+    started = deadline[0] - duration_seconds
+
+    # Bounded joins. A worker stuck on an unresponsive server would otherwise
+    # hang the entire benchmark; the grace period is generous enough that a
+    # slow-but-live query still finishes, and anything past it is reported as a
+    # stuck worker rather than silently waited on. Threads are daemons, so a
+    # straggler cannot keep the process alive.
+    grace = join_grace_seconds if join_grace_seconds is not None else max(30.0, duration_seconds)
+    stuck = 0
     for t in threads:
-        t.join()
+        remaining = (started + duration_seconds + grace) - time.perf_counter()
+        t.join(timeout=max(remaining, 1.0))
+        if t.is_alive():
+            stuck += 1
     elapsed = time.perf_counter() - started
+
+    if stuck:
+        with lock:
+            errors.append(
+                f"{stuck} of {clients} workers did not finish within "
+                f"{duration_seconds + grace:.0f}s and were abandoned"
+            )
 
     total = counters["reads"] + counters["writes"]
     return ConcurrencyResult(

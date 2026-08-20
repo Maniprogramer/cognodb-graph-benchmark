@@ -13,6 +13,13 @@ import json
 import math
 from pathlib import Path
 
+import matplotlib
+
+# Force the non-interactive backend before pyplot is imported anywhere.
+# matplotlib defaults to the "macosx" GUI backend on a Mac, which can block
+# when the benchmark runs headless or as a background job.
+matplotlib.use("Agg")
+
 # Validated adjacent-pair palette. Assigned in fixed order, never cycled.
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
 SURFACE = "#fcfcfb"

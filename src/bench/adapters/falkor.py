@@ -65,16 +65,29 @@ class FalkorAdapter(GraphAdapter):
     def connect(self) -> None:
         if self._graph is not None:
             return
+        # socket_timeout is mandatory, not tuning: without it a query whose
+        # response never arrives blocks the worker thread forever and the whole
+        # run hangs. A recorded timeout is always better than a stuck harness.
         self._db = FalkorDB(
             host=self.config.get("host", "localhost"),
             port=int(self.config.get("port", 6379)),
             password=self.config.get("password") or None,
+            socket_timeout=float(self.config.get("query_timeout", 60)),
+            socket_connect_timeout=float(self.config.get("connection_timeout", 30)),
         )
         self._graph = self._db.select_graph(self.config.get("graph", GRAPH_KEY))
         self._graph.query("RETURN 1")
         self._connected = True
 
     def close(self) -> None:
+        # Release the underlying Redis connection pool. Dropping the references
+        # alone leaks a live socket per worker, which at 40 concurrent clients
+        # exhausts file descriptors well before the sweep finishes.
+        try:
+            if self._db is not None:
+                self._db.connection.close()
+        except Exception:
+            pass
         self._graph = None
         self._db = None
         self._connected = False
