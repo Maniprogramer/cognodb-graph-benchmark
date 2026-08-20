@@ -163,34 +163,77 @@ class BoltAdapter(GraphAdapter):
         return ["Paper.paper_id", "Paper.year", "Paper.degree"]
 
     def _await_indexes(self) -> None:
-        """Block until indexes are online; an index still building would make
-        the load look artificially fast and the first queries artificially slow."""
+        """Ask the server to block until indexes are online, if it can.
+
+        Not every Bolt-compatible platform implements db.awaitIndexes --
+        CognoDB does not -- so this is best-effort only and is never relied on
+        for correctness. `_await_node_visibility` below is the check that
+        actually guards the load.
+        """
         if self.flavor == "memgraph":
             return  # Memgraph builds indexes synchronously
         try:
             self._run("CALL db.awaitIndexes(300)")
         except Exception:
-            time.sleep(2)
+            pass
+
+    def _await_node_visibility(self, sample_ids: list[int], timeout: float = 120.0) -> float:
+        """Block until freshly written nodes are findable by indexed lookup.
+
+        This exists because of a silent-data-loss bug, not as a precaution.
+        The edge load matches endpoints by `paper_id`; if the index backing
+        that lookup has not finished populating, the MATCH returns **zero rows
+        and no error**, so every CREATE is skipped and the load reports success
+        having written nothing. On CognoDB this produced a complete graph of
+        27,769 nodes and 0 relationships while claiming ~24,000 rels/sec.
+
+        A fixed sleep cannot fix this -- the delay is not knowable in advance.
+        Probing the exact lookup the edge load depends on is the only check
+        that means anything, so that is what this does.
+        """
+        deadline = time.perf_counter() + timeout
+        probes = [i for i in sample_ids[:3]]
+        waited = 0.0
+        while time.perf_counter() < deadline:
+            found = sum(
+                self._run(Q_POINT, id=node_id)[0]["c"] for node_id in probes
+            )
+            if found == len(probes):
+                return waited
+            time.sleep(1.0)
+            waited += 1.0
+        raise RuntimeError(
+            f"nodes still not visible to indexed lookup after {timeout:.0f}s; "
+            "loading edges now would silently create nothing"
+        )
 
     # ---------------------------------------------------------------- loading
 
     def load(self, nodes, edges, batch_size: int) -> LoadResult:
-        t0 = time.perf_counter()
+        node_start = time.perf_counter()
         for i in range(0, len(nodes), batch_size):
             self._run(LOAD_NODES, rows=nodes[i : i + batch_size])
-        t1 = time.perf_counter()
+        node_seconds = time.perf_counter() - node_start
+
+        # Wait for the nodes to become findable by indexed lookup before
+        # loading edges. Deliberately excluded from the reported timings: this
+        # is the harness synchronising with the server, not work we asked the
+        # server to do, and charging it to ingest would penalise a platform for
+        # our own bookkeeping. See _await_node_visibility for why it exists.
+        self._await_node_visibility([n["paper_id"] for n in nodes])
 
         edge_rows = [{"src": s, "dst": d} for s, d in edges]
+        edge_start = time.perf_counter()
         for i in range(0, len(edge_rows), batch_size):
             self._run(LOAD_EDGES, rows=edge_rows[i : i + batch_size])
-        t2 = time.perf_counter()
+        relationship_seconds = time.perf_counter() - edge_start
 
         return LoadResult(
             nodes_loaded=len(nodes),
             relationships_loaded=len(edges),
-            node_seconds=t1 - t0,
-            relationship_seconds=t2 - t1,
-            total_seconds=t2 - t0,
+            node_seconds=node_seconds,
+            relationship_seconds=relationship_seconds,
+            total_seconds=node_seconds + relationship_seconds,
             method=f"official neo4j driver, UNWIND batching (batch={batch_size})",
         )
 
@@ -238,6 +281,9 @@ class BoltAdapter(GraphAdapter):
 
     def relationship_count(self) -> int:
         return self._run(Q_REL_COUNT)[0]["c"]
+
+    def _noop_query(self) -> None:
+        self._run("RETURN 1 AS x")
 
     def spec(self) -> PlatformSpec:
         cfg = self.config.get("spec", {})

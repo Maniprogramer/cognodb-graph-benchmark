@@ -6,6 +6,7 @@ inputs that a real database would not conveniently produce.
 """
 
 import json
+import time
 import math
 
 import pytest
@@ -316,3 +317,61 @@ class TestWarmup:
         adapter.warmup([1], iterations=1, plan=None)
         assert "3-hop" in adapter.touched
         assert "filtered-lookup" not in adapter.touched
+
+
+class TestBaselineRtt:
+    """The transport floor is what makes a remote/local comparison readable."""
+
+    class NoopAdapter:
+        def __init__(self, delay=0.0):
+            self.delay = delay
+            self.calls = 0
+
+        def _noop_query(self):
+            self.calls += 1
+            if self.delay:
+                time.sleep(self.delay)
+
+    def _adapter(self, delay=0.0):
+        from bench.adapters.base import GraphAdapter
+
+        a = self.NoopAdapter(delay)
+        a.timed = GraphAdapter.timed.__get__(a)
+        a.baseline_rtt_ms = GraphAdapter.baseline_rtt_ms.__get__(a)
+        return a
+
+    def test_reports_percentiles(self):
+        a = self._adapter()
+        result = a.baseline_rtt_ms(iterations=5)
+        assert result["iterations"] == 5
+        assert a.calls == 5
+        assert result["p95"] >= result["p50"] >= result["min"]
+
+    def test_measures_actual_delay(self):
+        a = self._adapter(delay=0.02)
+        result = a.baseline_rtt_ms(iterations=3)
+        assert result["p50"] >= 15  # ~20ms, allowing scheduler slack
+
+    def test_every_adapter_implements_noop(self):
+        from bench.adapters.arango import ArangoAdapter
+        from bench.adapters.bolt import BoltAdapter
+        from bench.adapters.falkor import FalkorAdapter
+
+        for cls in (BoltAdapter, ArangoAdapter, FalkorAdapter):
+            assert "_noop_query" in cls.__dict__, f"{cls.__name__} missing _noop_query"
+
+
+class TestBaselineTable:
+    def test_shows_transport_share_of_latency(self, sample_results):
+        from bench.report import table_baseline
+
+        sample_results["platforms"][0]["baseline_rtt"] = {"p50": 0.5, "p95": 0.8, "min": 0.4}
+        sample_results["platforms"][0]["workloads"]["1-hop"]["p50"] = 1.0
+        table = table_baseline(sample_results)
+        assert "50%" in table  # 0.5ms of a 1.0ms query is transport
+
+    def test_error_surfaced(self, sample_results):
+        from bench.report import table_baseline
+
+        sample_results["platforms"][0]["baseline_rtt"] = {"error": "TimeoutError: x"}
+        assert "TimeoutError" in table_baseline(sample_results)

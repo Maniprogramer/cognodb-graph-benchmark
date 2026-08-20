@@ -219,6 +219,9 @@ class ArangoAdapter(GraphAdapter):
     def relationship_count(self) -> int:
         return self._db.collection(EDGE_COLLECTION).count()
 
+    def _noop_query(self) -> None:
+        self._aql("RETURN 1")
+
     def spec(self) -> PlatformSpec:
         cfg = self.config.get("spec", {})
         return PlatformSpec(

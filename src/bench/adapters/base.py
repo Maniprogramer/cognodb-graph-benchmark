@@ -184,6 +184,35 @@ class GraphAdapter(ABC):
     def spec(self) -> PlatformSpec:
         """Advertised tier resources plus whatever footprint the platform exposes."""
 
+    @abstractmethod
+    def _noop_query(self) -> None:
+        """Execute the cheapest query the platform accepts, returning nothing useful."""
+
+    def baseline_rtt_ms(self, iterations: int = 20) -> dict:
+        """Median round-trip time for a query that does no work.
+
+        This is the floor under every other latency on the platform: no
+        measured workload can be faster than the transport. It matters most
+        when comparing a managed endpoint reached over the internet against
+        containers on loopback, where the difference between the two baselines
+        is pure network and nothing to do with the engine. Reporting it lets a
+        reader subtract it instead of taking a wide-area round trip for a slow
+        database.
+        """
+        from ..stats import percentile
+
+        samples = []
+        for _ in range(iterations):
+            with self.timed() as elapsed:
+                self._noop_query()
+            samples.append(elapsed[0])
+        return {
+            "p50": round(percentile(samples, 50), 3),
+            "p95": round(percentile(samples, 95), 3),
+            "min": round(min(samples), 3),
+            "iterations": iterations,
+        }
+
     def sample_start_nodes(self, candidates: list[int], count: int, seed: int) -> list[int]:
         """Choose traversal start nodes.
 

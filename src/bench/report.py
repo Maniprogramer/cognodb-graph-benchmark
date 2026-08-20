@@ -345,6 +345,30 @@ def table_footprint(results: dict) -> str:
     )
 
 
+def table_baseline(results: dict) -> str:
+    rows = []
+    for p in _completed(results):
+        rtt = p.get("baseline_rtt") or {}
+        if "error" in rtt:
+            rows.append([p["name"], rtt["error"], "—", "—", "—"])
+            continue
+        one_hop = p["workloads"].get("1-hop", {}).get("p50")
+        floor = rtt.get("p50")
+        share = (
+            f"{100 * floor / one_hop:.0f}%"
+            if floor and one_hop and one_hop > 0
+            else "—"
+        )
+        rows.append([
+            p["name"], _fmt(floor), _fmt(rtt.get("p95")), _fmt(one_hop), share,
+        ])
+    return _table(
+        ["Platform", "Transport p50 (ms)", "Transport p95 (ms)",
+         "1-hop p50 (ms)", "Share of 1-hop that is transport"],
+        rows,
+    )
+
+
 def table_cold_start(results: dict) -> str:
     rows = []
     for p in _completed(results):
@@ -451,6 +475,8 @@ def write_report(results: dict, results_dir: Path) -> Path:
         "disagree, the queries are not equivalent and the latency comparison "
         "below is invalid.\n",
         table_parity(results),
+        "## Transport baseline\n",
+        table_baseline(results),
         "## Ingest throughput\n",
         table_ingest(results),
         embed("ingest", "Ingest throughput by platform"),
@@ -534,6 +560,12 @@ def build_results_section(results: dict, charts_rel: str = "results/charts") -> 
         table_parity(results),
         "### Tier parity\n",
         table_platforms(results),
+        "### Transport baseline\n",
+        "Median round-trip for a query that does no work (`RETURN 1`). This is "
+        "the floor under every latency below: no workload can beat its own "
+        "transport. It is the number to subtract before comparing a managed "
+        "endpoint against a container on loopback.\n",
+        table_baseline(results),
         "### Ingest throughput\n",
         table_ingest(results),
         embed("ingest_throughput.png", "Ingest throughput by platform"),

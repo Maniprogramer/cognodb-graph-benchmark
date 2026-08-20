@@ -184,6 +184,9 @@ class FalkorAdapter(GraphAdapter):
     def relationship_count(self) -> int:
         return self._scalar(Q_REL_COUNT)
 
+    def _noop_query(self) -> None:
+        self._q("RETURN 1")
+
     def spec(self) -> PlatformSpec:
         cfg = self.config.get("spec", {})
         return PlatformSpec(

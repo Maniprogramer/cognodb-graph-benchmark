@@ -45,6 +45,7 @@ class PlatformRun:
     load: dict | None = None
     verification: dict | None = None
     cold_start_ms: dict = field(default_factory=dict)
+    baseline_rtt: dict = field(default_factory=dict)
     workloads: dict = field(default_factory=dict)
     workload_results: dict = field(default_factory=dict)
     concurrency: list[dict] = field(default_factory=list)
@@ -62,6 +63,7 @@ class PlatformRun:
             "load": self.load,
             "verification": self.verification,
             "cold_start_ms": self.cold_start_ms,
+            "baseline_rtt": self.baseline_rtt,
             "workloads": {k: v.to_dict() for k, v in self.workloads.items()},
             "workload_results": self.workload_results,
             "concurrency": self.concurrency,
@@ -196,6 +198,15 @@ def run_platform(
             log(f"  {platform_cfg.name}: WARNING -- {run.errors[-1]}")
 
         run.cold_start_ms = measure_cold_start(adapter, plan)
+
+        # Transport floor, measured after the load so the connection is
+        # established and any lazy handshake is already paid.
+        try:
+            run.baseline_rtt = adapter.baseline_rtt_ms()
+            log(f"  {platform_cfg.name}: transport baseline "
+                f"{run.baseline_rtt['p50']:.2f} ms p50")
+        except Exception as exc:
+            run.baseline_rtt = {"error": f"{type(exc).__name__}: {exc}"}
 
         log(f"  {platform_cfg.name}: warming up ({settings['warmup_iterations']} iterations)")
         adapter.warmup(plan.start_nodes, settings["warmup_iterations"], plan)
