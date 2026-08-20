@@ -7,10 +7,11 @@ machine, and — the part that usually gets fudged — **one set of hardware lim
 Everything here runs from `make all`. Every number in this README was produced by
 that command; none was typed in by hand.
 
-> **Scope of the published run:** the results below cover **four engines** —
-> Neo4j, Memgraph, ArangoDB and FalkorDB. CognoDB is fully supported by the
-> harness but no instance was provisioned, so it is reported as *not configured*
-> rather than estimated. See [Caveats](#caveats).
+> **Scope of the published run:** all **five** platforms — CognoDB Cloud, Neo4j,
+> Memgraph, ArangoDB and FalkorDB — loaded the identical dataset and returned
+> identical results on every workload. CognoDB is a managed endpoint reached over
+> the internet while the other four are local containers, so its latencies are
+> reported alongside a measured transport floor. See [Caveats](#caveats).
 
 > **On who "wins".** The interesting result in this benchmark is not the ranking.
 > It is *why* engines that answer identical questions on identical hardware differ
@@ -68,23 +69,29 @@ the difference.
 ### Where this parity is imperfect — stated up front
 
 CognoDB is a **managed cloud instance reached over the public internet**, while
-the four comparison engines are **local containers reached over loopback**. This
-did not affect the published run, in which CognoDB was not configured and so was
-not measured at all — but it will affect any run that includes it, and it is not
-a difference the harness can eliminate:
+the four comparison engines are **local containers reached over loopback**. That
+is not a difference resource caps can fix, and it is large:
 
-- Every CognoDB measurement includes a network round trip that the local
-  platforms do not pay. On sub-millisecond workloads — point lookups especially —
-  that round trip can *exceed* the query itself.
+- Every CognoDB operation pays a network round trip the local platforms do not.
+  Measured, that round trip is **238 ms** — while Memgraph answers a 1-hop
+  traversal in 0.39 ms. On every read workload here, transport is not a
+  correction to the measurement, it *is* the measurement.
 - "0.5 burstable vCPU" on managed hardware and `cpus: 0.5` under cgroups are
   similar in intent but not identical in behaviour, particularly in how burst
   credit accrues.
 
-Both effects push in the same direction: **they make CognoDB look slower than its
-engine is**. Read the CognoDB row as an upper bound on latency, not a measurement
-of the engine in isolation. The honest way to remove this asymmetry is to
-benchmark managed endpoints for all five platforms from the same client region,
-which the harness supports and which is the natural next run.
+Both push the same way: **they make CognoDB look far slower than its engine is.**
+
+Rather than only warning about this, the harness measures it. Every platform's
+floor — the median round trip for `RETURN 1`, a query that does no work — is
+recorded and reported, so the transport component can be subtracted. Net of it,
+CognoDB's 1-hop traversal costs about 1.5 ms against Neo4j's 1.3 ms; the raw
+600× gap to Memgraph is roughly 99% network. See
+[Analysis §1](#1-almost-all-of-cognodbs-latency-is-the-network-and-the-harness-can-prove-it).
+
+Subtraction is still an estimate, not a fix. The clean version of this experiment
+benchmarks all five as managed endpoints from one client region — which this
+harness supports without code changes, and which is the natural next run.
 
 ---
 
@@ -284,7 +291,7 @@ parity table stays truthful.
 
 <!-- BENCHMARK_RESULTS:START -->
 
-Run `20260820T165121Z` · client: macOS-26.5.2-arm64-arm-64bit-Mach-O (8 CPUs) · 100 iterations per read workload after 20 warm-up, 3 repeats · dataset 27,769 nodes / 352,768 relationships.
+Run `20260820T171439Z` · client: macOS-26.5.2-arm64-arm-64bit-Mach-O (8 CPUs) · 100 iterations per read workload after 20 warm-up, 3 repeats · dataset 27,769 nodes / 352,768 relationships.
 
 ### Result parity
 
@@ -315,21 +322,24 @@ Median round-trip for a query that does no work (`RETURN 1`). This is the floor 
 
 | Platform | Transport p50 (ms) | Transport p95 (ms) | 1-hop p50 (ms) | Share of 1-hop that is transport |
 |---|---|---|---|---|
-| CognoDB Cloud | 239.37 | 243.21 | 248.02 | 97% |
-| Neo4j | 3.38 | 83.37 | 4.07 | 83% |
-| Memgraph | 0.67 | 2.73 | 0.42 | 158% |
-| ArangoDB | 2.52 | 3.06 | 4.99 | 51% |
-| FalkorDB | 0.78 | 1.16 | 1.13 | 69% |
+| CognoDB Cloud | 238.08 | 309.77 | 239.57 | 99% |
+| Neo4j | 2.99 | 86.70 | 4.26 | 70% |
+| Memgraph | 0.45 | 0.72 | 0.39 | at floor |
+| ArangoDB | 2.28 | 8.76 | 3.11 | 73% |
+| FalkorDB | 0.27 | 0.43 | 0.50 | 53% |
+
+
+![Transport floor vs measured query cost](results/charts/transport_baseline.png)
 
 ### Ingest throughput
 
 | Platform | Nodes/s | Rels/s | Total load (s) | Load method |
 |---|---|---|---|---|
-| CognoDB Cloud | 11,354 | 18,393 | 21.6 | official neo4j driver, UNWIND batching (batch=10000) |
-| Neo4j | 1,595 | 5,756 | 78.7 | official neo4j driver, UNWIND batching (batch=10000) |
-| Memgraph | 29,971 | 43,368 | 9.1 | official neo4j driver, UNWIND batching (batch=10000) |
-| ArangoDB | 17,311 | 21,271 | 18.2 | python-arango insert_many batching (batch=10000) |
-| FalkorDB | 14,276 | 28,367 | 14.4 | falkordb client, UNWIND batching (batch=10000) |
+| CognoDB Cloud | 12,153 | 17,531 | 22.4 | official neo4j driver, UNWIND batching (batch=10000) |
+| Neo4j | 1,163 | 5,421 | 89.0 | official neo4j driver, UNWIND batching (batch=10000) |
+| Memgraph | 18,777 | 42,246 | 9.8 | official neo4j driver, UNWIND batching (batch=10000) |
+| ArangoDB | 25,145 | 32,703 | 11.9 | python-arango insert_many batching (batch=10000) |
+| FalkorDB | 19,829 | 35,320 | 11.4 | falkordb client, UNWIND batching (batch=10000) |
 
 
 ![Ingest throughput by platform](results/charts/ingest_throughput.png)
@@ -338,11 +348,11 @@ Median round-trip for a query that does no work (`RETURN 1`). This is the floor 
 
 | Platform | 1-hop p50 | 1-hop p95 | 2-hop p50 | 2-hop p95 | 3-hop p50 | 3-hop p95 |
 |---|---|---|---|---|---|---|
-| CognoDB Cloud | 248.02 | 325.86 | 240.92 | 304.45 | 263.37 | 444.14 |
-| Neo4j | 4.07 | 89.74 | 3.11 | 65.81 | 4.66 | 89.06 |
-| Memgraph | 0.42 | 0.99 | 0.44 | 0.72 | 1.11 | 4.58 |
-| ArangoDB | 4.99 | 66.41 | 4.82 | 77.79 | 20.96 | 200.04 |
-| FalkorDB | 1.13 | 2.10 | 0.92 | 1.54 | 1.46 | 3.51 |
+| CognoDB Cloud | 239.57 | 308.85 | 240.19 | 262.41 | 256.30 | 447.23 |
+| Neo4j | 4.26 | 87.16 | 4.67 | 74.09 | 4.63 | 86.63 |
+| Memgraph | 0.39 | 0.66 | 0.46 | 0.72 | 1.08 | 6.55 |
+| ArangoDB | 3.11 | 54.25 | 4.86 | 79.06 | 16.50 | 175.72 |
+| FalkorDB | 0.50 | 1.15 | 0.42 | 0.74 | 0.94 | 2.77 |
 
 
 ![Traversal p50 latency by hop depth](results/charts/traversal_p50.png)
@@ -354,11 +364,11 @@ Median round-trip for a query that does no work (`RETURN 1`). This is the floor 
 
 | Platform | point p50 | point p95 | filtered p50 | filtered p95 | aggregation p50 | aggregation p95 | Indexed properties |
 |---|---|---|---|---|---|---|---|
-| CognoDB Cloud | 247.36 | 289.46 | 245.63 | 306.11 | 286.84 | 347.23 | Paper.paper_id, Paper.year, Paper.degree |
-| Neo4j | 2.44 | 45.73 | 5.35 | 82.64 | 9.99 | 97.75 | Paper.paper_id, Paper.year, Paper.degree |
-| Memgraph | 0.37 | 0.57 | 0.81 | 0.98 | 6.30 | 36.62 | Paper.paper_id, Paper.year, Paper.degree |
-| ArangoDB | 3.39 | 4.75 | 7.47 | 27.60 | 9.28 | 37.01 | papers.paper_id, papers.year, papers.degree |
-| FalkorDB | 0.93 | 2.56 | 0.98 | 1.53 | 4.92 | 39.71 | Paper.paper_id, Paper.year, Paper.degree |
+| CognoDB Cloud | 244.13 | 269.85 | 244.90 | 309.61 | 287.10 | 342.91 | Paper.paper_id, Paper.year, Paper.degree |
+| Neo4j | 2.44 | 56.40 | 4.46 | 67.04 | 9.16 | 94.36 | Paper.paper_id, Paper.year, Paper.degree |
+| Memgraph | 0.39 | 0.83 | 1.22 | 1.88 | 6.47 | 30.14 | Paper.paper_id, Paper.year, Paper.degree |
+| ArangoDB | 2.06 | 2.71 | 6.06 | 14.04 | 7.48 | 36.80 | papers.paper_id, papers.year, papers.degree |
+| FalkorDB | 0.58 | 3.30 | 0.69 | 0.82 | 4.04 | 23.11 | Paper.paper_id, Paper.year, Paper.degree |
 
 
 ![Lookup and aggregation p50 latency](results/charts/lookups_p50.png)
@@ -367,21 +377,21 @@ Median round-trip for a query that does no work (`RETURN 1`). This is the floor 
 
 | Platform | Clients | QPS | p50 ms | p95 ms | p99 ms | Reads | Writes | Errors |
 |---|---|---|---|---|---|---|---|---|
-| CognoDB Cloud | 1 | 3.8 | 238.87 | 325.18 | 922.73 | 63 | 13 | 0 |
-| CognoDB Cloud | 10 | 39.3 | 248.15 | 272.85 | 304.71 | 636 | 157 | 0 |
-| CognoDB Cloud | 40 | 152.9 | 247.73 | 274.45 | 306.69 | 2558 | 640 | 0 |
-| Neo4j | 1 | 215.7 | 1.45 | 7.99 | 72.74 | 3455 | 859 | 0 |
-| Neo4j | 10 | 184.3 | 10.49 | 105.81 | 285.40 | 2975 | 713 | 0 |
-| Neo4j | 40 | 279.0 | 98.33 | 283.55 | 578.74 | 4503 | 1128 | 7 |
-| Memgraph | 1 | 2,273.3 | 0.34 | 0.91 | 2.04 | 36378 | 9126 | 0 |
-| Memgraph | 10 | 1,386.1 | 3.43 | 47.17 | 60.41 | 22407 | 5321 | 0 |
-| Memgraph | 40 | 1,547.4 | 18.26 | 67.80 | 86.59 | 24868 | 6094 | 1 |
-| ArangoDB | 1 | 259.7 | 3.82 | 5.20 | 6.28 | 4150 | 1044 | 0 |
-| ArangoDB | 10 | 826.3 | 8.98 | 37.99 | 46.60 | 13367 | 3166 | 0 |
-| ArangoDB | 40 | 970.1 | 39.07 | 70.43 | 87.82 | 15588 | 3833 | 0 |
-| FalkorDB | 1 | 1,288.2 | 0.66 | 1.24 | 1.70 | 20636 | 5131 | 0 |
-| FalkorDB | 10 | 1,729.5 | 1.63 | 66.08 | 77.07 | 27911 | 6686 | 0 |
-| FalkorDB | 40 | 1,676.5 | 6.79 | 85.04 | 92.59 | 27002 | 6594 | 869 |
+| CognoDB Cloud | 1 | 4.0 | 239.73 | 284.37 | 451.61 | 65 | 16 | 0 |
+| CognoDB Cloud | 10 | 39.5 | 248.23 | 264.20 | 285.52 | 641 | 159 | 0 |
+| CognoDB Cloud | 40 | 155.5 | 252.19 | 278.47 | 306.12 | 2514 | 634 | 0 |
+| Neo4j | 1 | 178.2 | 1.64 | 27.83 | 78.86 | 2865 | 711 | 0 |
+| Neo4j | 10 | 182.1 | 23.25 | 109.82 | 209.55 | 2939 | 705 | 0 |
+| Neo4j | 40 | 239.4 | 104.93 | 302.45 | 485.84 | 3838 | 976 | 7 |
+| Memgraph | 1 | 2,779.8 | 0.34 | 0.54 | 0.70 | 44544 | 11054 | 0 |
+| Memgraph | 10 | 3,265.4 | 1.90 | 4.98 | 36.79 | 52490 | 12829 | 1 |
+| Memgraph | 40 | 3,261.6 | 8.14 | 38.79 | 52.47 | 52324 | 12926 | 2 |
+| ArangoDB | 1 | 268.0 | 3.88 | 5.35 | 6.60 | 4284 | 1076 | 0 |
+| ArangoDB | 10 | 1,754.6 | 4.66 | 14.46 | 27.75 | 28311 | 6786 | 0 |
+| ArangoDB | 40 | 1,730.4 | 20.60 | 44.88 | 60.00 | 27848 | 6802 | 0 |
+| FalkorDB | 1 | 1,884.2 | 0.49 | 0.67 | 1.04 | 30194 | 7494 | 0 |
+| FalkorDB | 10 | 1,756.9 | 1.42 | 68.40 | 78.24 | 28431 | 6816 | 0 |
+| FalkorDB | 40 | 1,814.5 | 5.86 | 84.59 | 91.61 | 29296 | 7090 | 1027 |
 
 
 ![Mixed workload scaling](results/charts/concurrency_scaling.png)
@@ -390,21 +400,21 @@ Median round-trip for a query that does no work (`RETURN 1`). This is the floor 
 
 | Platform | Workload | Cold first-touch ms | Warm p50 ms |
 |---|---|---|---|
-| CognoDB Cloud | 1-hop | 301.61 | 248.02 |
-| CognoDB Cloud | 3-hop | 367.67 | 263.37 |
-| CognoDB Cloud | aggregation | 332.26 | 286.84 |
-| Neo4j | 1-hop | 637.20 | 4.07 |
-| Neo4j | 3-hop | 1,315.21 | 4.66 |
-| Neo4j | aggregation | 311.84 | 9.99 |
-| Memgraph | 1-hop | 6.58 | 0.42 |
-| Memgraph | 3-hop | 7.39 | 1.11 |
-| Memgraph | aggregation | 6.92 | 6.30 |
-| ArangoDB | 1-hop | 16.88 | 4.99 |
-| ArangoDB | 3-hop | 111.92 | 20.96 |
-| ArangoDB | aggregation | 14.91 | 9.28 |
-| FalkorDB | 1-hop | 458.73 | 1.13 |
-| FalkorDB | 3-hop | 3.24 | 1.46 |
-| FalkorDB | aggregation | 5.08 | 4.92 |
+| CognoDB Cloud | 1-hop | 237.62 | 239.57 |
+| CognoDB Cloud | 3-hop | 361.00 | 256.30 |
+| CognoDB Cloud | aggregation | 283.56 | 287.10 |
+| Neo4j | 1-hop | 530.08 | 4.26 |
+| Neo4j | 3-hop | 1,390.83 | 4.63 |
+| Neo4j | aggregation | 501.08 | 9.16 |
+| Memgraph | 1-hop | 7.90 | 0.39 |
+| Memgraph | 3-hop | 9.20 | 1.08 |
+| Memgraph | aggregation | 6.76 | 6.47 |
+| ArangoDB | 1-hop | 16.77 | 3.11 |
+| ArangoDB | 3-hop | 67.67 | 16.50 |
+| ArangoDB | aggregation | 17.23 | 7.48 |
+| FalkorDB | 1-hop | 188.63 | 0.50 |
+| FalkorDB | 3-hop | 2.83 | 0.94 |
+| FalkorDB | aggregation | 5.08 | 4.04 |
 
 ### Run-to-run variance
 
@@ -412,36 +422,36 @@ How much of the difference between platforms is noise. Spread is the range of p5
 
 | Platform | Workload | Runs | p50 per run (ms) | Spread (ms) | Spread % |
 |---|---|---|---|---|---|
-| CognoDB Cloud | 1-hop | 3 | 248.02, 247.61, 240.17 | 7.84 | 3.2% |
-| CognoDB Cloud | 2-hop | 3 | 240.92, 240.50, 240.88 | 0.41 | 0.2% |
-| CognoDB Cloud | 3-hop | 3 | 263.37, 269.24, 266.66 | 5.87 | 2.2% |
-| CognoDB Cloud | point-lookup | 3 | 247.36, 241.00, 239.45 | 7.91 | 3.3% |
-| CognoDB Cloud | filtered-lookup | 3 | 245.63, 245.69, 246.03 | 0.39 | 0.2% |
-| CognoDB Cloud | aggregation | 3 | 286.85, 292.63, 290.71 | 5.79 | 2.0% |
-| Neo4j | 1-hop | 3 | 4.07, 1.92, 1.70 | 2.38 | 92.7% |
-| Neo4j | 2-hop | 3 | 3.11, 2.36, 1.79 | 1.32 | 54.5% |
-| Neo4j | 3-hop | 3 | 4.66, 3.69, 3.04 | 1.61 | 42.5% |
-| Neo4j | point-lookup | 3 | 2.44, 1.77, 1.54 | 0.91 | 47.2% |
-| Neo4j | filtered-lookup | 3 | 5.35, 4.17, 3.75 | 1.59 | 36.0% |
-| Neo4j | aggregation | 3 | 9.99, 8.52, 9.85 | 1.47 | 15.6% |
-| Memgraph | 1-hop | 3 | 0.42, 0.71, 0.80 | 0.38 | 58.2% |
-| Memgraph | 2-hop | 3 | 0.44, 0.99, 0.80 | 0.55 | 74.2% |
-| Memgraph | 3-hop | 3 | 1.11, 1.69, 1.63 | 0.58 | 39.4% |
-| Memgraph | point-lookup | 3 | 0.37, 0.66, 0.81 | 0.44 | 71.5% |
-| Memgraph | filtered-lookup | 3 | 0.81, 1.27, 1.47 | 0.66 | 55.5% |
-| Memgraph | aggregation | 3 | 6.30, 6.55, 6.40 | 0.25 | 3.9% |
-| ArangoDB | 1-hop | 3 | 4.99, 3.83, 3.13 | 1.86 | 46.6% |
-| ArangoDB | 2-hop | 3 | 4.82, 4.79, 4.21 | 0.61 | 13.3% |
-| ArangoDB | 3-hop | 3 | 20.96, 20.17, 18.77 | 2.19 | 11.0% |
-| ArangoDB | point-lookup | 3 | 3.39, 3.00, 2.73 | 0.66 | 21.7% |
-| ArangoDB | filtered-lookup | 3 | 7.47, 7.27, 7.12 | 0.36 | 4.9% |
-| ArangoDB | aggregation | 3 | 9.28, 9.10, 8.96 | 0.32 | 3.5% |
-| FalkorDB | 1-hop | 3 | 1.13, 0.94, 0.65 | 0.48 | 53.1% |
-| FalkorDB | 2-hop | 3 | 0.92, 0.93, 0.97 | 0.06 | 6.0% |
-| FalkorDB | 3-hop | 3 | 1.46, 1.35, 1.45 | 0.10 | 7.3% |
-| FalkorDB | point-lookup | 3 | 0.93, 0.75, 0.64 | 0.29 | 38.1% |
-| FalkorDB | filtered-lookup | 3 | 0.98, 1.10, 1.11 | 0.13 | 12.1% |
-| FalkorDB | aggregation | 3 | 4.92, 4.82, 4.63 | 0.30 | 6.2% |
+| CognoDB Cloud | 1-hop | 3 | 239.57, 245.02, 243.16 | 5.45 | 2.2% |
+| CognoDB Cloud | 2-hop | 3 | 240.19, 240.64, 240.93 | 0.74 | 0.3% |
+| CognoDB Cloud | 3-hop | 3 | 256.30, 259.87, 263.85 | 7.55 | 2.9% |
+| CognoDB Cloud | point-lookup | 3 | 244.13, 243.62, 239.86 | 4.28 | 1.8% |
+| CognoDB Cloud | filtered-lookup | 3 | 244.90, 246.02, 247.01 | 2.11 | 0.9% |
+| CognoDB Cloud | aggregation | 3 | 287.10, 290.08, 290.98 | 3.88 | 1.3% |
+| Neo4j | 1-hop | 3 | 4.26, 2.06, 1.60 | 2.66 | 100.7% |
+| Neo4j | 2-hop | 3 | 4.67, 2.41, 1.81 | 2.85 | 96.3% |
+| Neo4j | 3-hop | 3 | 4.63, 4.25, 3.06 | 1.57 | 39.6% |
+| Neo4j | point-lookup | 3 | 2.44, 2.03, 1.58 | 0.85 | 42.4% |
+| Neo4j | filtered-lookup | 3 | 4.46, 4.38, 3.72 | 0.74 | 17.8% |
+| Neo4j | aggregation | 3 | 9.16, 7.46, 8.39 | 1.71 | 20.5% |
+| Memgraph | 1-hop | 3 | 0.39, 0.85, 0.77 | 0.47 | 69.8% |
+| Memgraph | 2-hop | 3 | 0.46, 0.95, 0.89 | 0.49 | 64.3% |
+| Memgraph | 3-hop | 3 | 1.08, 1.70, 1.56 | 0.62 | 42.9% |
+| Memgraph | point-lookup | 3 | 0.39, 0.81, 0.70 | 0.42 | 66.1% |
+| Memgraph | filtered-lookup | 3 | 1.22, 1.58, 1.52 | 0.37 | 25.4% |
+| Memgraph | aggregation | 3 | 6.47, 6.62, 6.45 | 0.17 | 2.6% |
+| ArangoDB | 1-hop | 3 | 3.10, 2.75, 2.48 | 0.63 | 22.5% |
+| ArangoDB | 2-hop | 3 | 4.86, 4.05, 2.82 | 2.04 | 52.1% |
+| ArangoDB | 3-hop | 3 | 16.50, 13.82, 13.87 | 2.68 | 18.2% |
+| ArangoDB | point-lookup | 3 | 2.06, 2.69, 2.23 | 0.62 | 26.8% |
+| ArangoDB | filtered-lookup | 3 | 6.06, 6.28, 6.31 | 0.26 | 4.1% |
+| ArangoDB | aggregation | 3 | 7.48, 7.75, 7.63 | 0.27 | 3.5% |
+| FalkorDB | 1-hop | 3 | 0.50, 0.47, 0.62 | 0.15 | 27.8% |
+| FalkorDB | 2-hop | 3 | 0.42, 0.55, 0.63 | 0.22 | 40.5% |
+| FalkorDB | 3-hop | 3 | 0.94, 0.94, 0.91 | 0.03 | 2.9% |
+| FalkorDB | point-lookup | 3 | 0.58, 0.54, 0.54 | 0.04 | 6.9% |
+| FalkorDB | filtered-lookup | 3 | 0.69, 0.77, 0.77 | 0.08 | 10.9% |
+| FalkorDB | aggregation | 3 | 4.04, 4.01, 3.93 | 0.11 | 2.7% |
 
 ### Footprint
 
@@ -451,9 +461,9 @@ Section 5.2 asks for resource usage *where observable*. It is stated plainly whe
 |---|---|---|---|---|
 | CognoDB Cloud | 27,769 | 352,768 | yes | not observable (JMX store metrics unavailable on this tier) |
 | Neo4j | 27,769 | 352,768 | yes | not observable (JMX store metrics unavailable on this tier) |
-| Memgraph | 27,769 | 352,768 | yes | memory_res=184.95MiB, disk_usage=25.88MiB, vertex_count=27,769, edge_count=352,768 |
-| ArangoDB | 27,769 | 352,768 | yes | papers_documents=27,769, papers_documents_bytes=2,325,026, cites_documents=352,768, cites_documents_bytes=30,063,316, index_bytes=39,670,027, total_stored_bytes=72,058,369 |
-| FalkorDB | 27,769 | 352,768 | yes | used_memory_bytes=32,718,992, used_memory_human=31.20M, used_memory_peak_bytes=79,570,568 |
+| Memgraph | 27,769 | 352,768 | yes | memory_res=179.58MiB, disk_usage=28.44MiB, vertex_count=27,769, edge_count=352,768 |
+| ArangoDB | 27,769 | 352,768 | yes | papers_documents=27,769, papers_documents_bytes=2,324,750, cites_documents=352,768, cites_documents_bytes=31,574,099, index_bytes=40,160,720, total_stored_bytes=74,059,569 |
+| FalkorDB | 27,769 | 352,768 | yes | used_memory_bytes=32,515,984, used_memory_human=31.01M, used_memory_peak_bytes=79,209,216 |
 
 <!-- BENCHMARK_RESULTS:END -->
 
@@ -461,228 +471,247 @@ Section 5.2 asks for resource usage *where observable*. It is stated plainly whe
 
 ## Analysis
 
-CognoDB is absent from this run — no instance was provisioned, so it is reported
-as *not configured* rather than estimated. Everything below concerns the four
-comparison engines, all on identical hardware, identical data, and — verified,
-not assumed — identical questions.
+All five platforms completed, all five loaded the full 27,769 nodes and 352,768
+relationships, and every one returned **identical counts on all six workloads**.
+The latency comparison below is therefore between engines answering the same
+questions — verified, not assumed.
 
-Read this section with the [variance table](#run-to-run-variance) open. Worst-case
-run-to-run spread reached **157.6%** (FalkorDB point lookup), **144.9%**
-(ArangoDB 3-hop) and **80.3%** (Neo4j aggregation). On a burstable 0.5-vCPU tier
-that noise is unavoidable, and it sets the bar for what counts as a real
-difference: **anything under roughly 2× is noise here.** The findings below are
-the ones that clear that bar by an order of magnitude or more.
+Read everything here against the [variance table](#run-to-run-variance). Worst
+run-to-run spread reached **100.7%** (Neo4j 1-hop), **69.8%** (Memgraph) and
+**52.1%** (ArangoDB). Between two full runs of this suite, ArangoDB's ingest
+moved 54% and its 3-hop p50 moved 3×. On a burstable 0.5-vCPU tier that is the
+noise floor, and it sets the bar: **differences under about 2× are not findings.**
+Only the effects below clear it by a wide margin.
 
-### 1. The hop-depth curve separates two families of engine
+### 1. Almost all of CognoDB's latency is the network, and the harness can prove it
 
-This is the most interesting result in the run.
+CognoDB's raw numbers look catastrophic — every read workload lands between 239
+and 287 ms while Memgraph answers in under a millisecond. Taken at face value
+that is a 600× gap, and it would be almost entirely wrong.
 
-| p50 (ms) | 1-hop | 2-hop | 3-hop | 1→3 change |
-|---|---|---|---|---|
-| **FalkorDB** | 0.61 | 0.47 | 0.93 | **1.5×** |
-| **Memgraph** | 0.88 | 0.57 | 1.44 | **1.6×** |
-| **Neo4j** | 5.06 | 4.55 | 6.82 | **1.3×** |
-| **ArangoDB** | 2.80 | 4.51 | **66.45** | **23.7×** |
+CognoDB is a managed endpoint reached over the public internet; the other four
+are containers on loopback. So the harness measures each platform's floor: the
+median round trip for `RETURN 1`, a query that does no work. Subtracting it
+gives an estimate of what the engine actually did:
 
-Three engines are essentially flat from one hop to three. ArangoDB is 24× worse at
-depth 3 than at depth 1 — and it *beat* Neo4j at depth 1.
+| p50 (ms) | Transport floor | 1-hop raw | **1-hop net** | 3-hop raw | **3-hop net** |
+|---|---|---|---|---|---|
+| CognoDB | 238.08 | 239.57 | **~1.5** | 256.30 | **~18.2** |
+| Neo4j | 2.99 | 4.26 | **~1.3** | 4.63 | **~1.6** |
+| ArangoDB | 2.28 | 3.11 | **~0.8** | 16.50 | **~14.2** |
+| FalkorDB | 0.27 | 0.50 | **~0.2** | 0.94 | **~0.7** |
+| Memgraph | 0.45 | 0.39 | *at floor* | 1.08 | **~0.6** |
 
-The cause is adjacency representation. ArangoDB stores edges as documents in an
-edge collection with an index on `_from`/`_to`, so every hop is an **index probe
-per frontier node**. On a scale-free citation graph the depth-3 frontier is large
-(these start nodes reach ~950 distinct nodes at depth 3), so a single 3-hop query
-performs on the order of a thousand index lookups. Memgraph follows pointers
-between adjacent records; FalkorDB multiplies a sparse adjacency matrix, where a
-third hop is simply a third multiply. Neither pays a per-node index cost.
+Net of transport, **CognoDB's 1-hop traversal costs about 1.5 ms — the same
+order as Neo4j's 1.3 ms.** The 600× headline was ~99% Atlantic.
 
-That distinction is worth more than the ranking: **index-backed adjacency
-degrades precisely where graph databases are supposed to earn their keep.** If
-your workload is one or two hops, ArangoDB is competitive and gives you a document
-model for free. If it is three or more, the gap is not a tuning problem — it is
-the data structure.
+Two honest qualifications. Subtracting one noisy median from another amplifies
+noise, so treat the net column as an estimate with wide error bars, not a
+measurement — Memgraph's 1-hop coming out *below* its own floor is exactly that
+effect, and is reported as "at floor" rather than as a negative number. And this
+does not make the raw numbers irrelevant: if your application talks to CognoDB
+over the internet, 240 ms per query is what you will actually experience. The
+net column tells you about the engine; the raw column tells you about the
+deployment.
 
-### 2. Neo4j's tail is a garbage collector, and it says so out loud
+### 2. Depth sensitivity splits the field into two families
 
-Neo4j's p95 is 10–20× its p50 on every workload (1-hop: 5.06 → 70.81 ms). The
-other engines sit between 2× and 4×.
+Using the net figures, which is the only fair way to compare a remote engine
+with local ones:
 
-The concurrency sweep supplies the proof rather than the inference. At 40 clients
-Neo4j returned seven errors, all of them:
+| 1-hop → 3-hop (net) | Change |
+|---|---|
+| Neo4j | 1.3 → 1.6 ms — **flat** |
+| FalkorDB | 0.2 → 0.7 ms — **flat** |
+| Memgraph | floor → 0.6 ms — **flat** |
+| ArangoDB | 0.8 → 14.2 ms — **~17×** |
+| CognoDB | 1.5 → 18.2 ms — **~12×** |
+
+Three engines barely notice the extra hops. **ArangoDB and CognoDB both degrade
+by more than an order of magnitude**, and they are the two whose 1-hop
+performance gave no warning of it — ArangoDB is *faster* than Neo4j at one hop
+and 9× slower at three.
+
+For ArangoDB the mechanism is clear: edges are documents with an index on their
+endpoints, so each hop costs an index probe per frontier node, and on a
+scale-free citation graph the depth-3 frontier is around 950 nodes — roughly a
+thousand index lookups for one query. Memgraph follows pointers; FalkorDB
+multiplies a sparse adjacency matrix, where a third hop is just a third
+multiply. Neither pays per node.
+
+For CognoDB the mechanism is **not** established by this data. The profile
+resembles index-backed adjacency, but the instance exposes no query plan and no
+storage internals, so that is a hypothesis rather than a finding. What can be
+said is the shape: its cost grows with traversal depth in a way that Neo4j's,
+Memgraph's and FalkorDB's do not.
+
+The generalisable lesson is the one that survives all the caveats: **on a fixed
+small budget, adjacency representation dominates, and one-hop benchmarks will
+not reveal it.**
+
+### 3. Neo4j's tail is a garbage collector, and it says so
+
+Neo4j's p95 runs **19×** its p50 on 1-hop (4.26 → 87.16 ms). No other engine
+exceeds 7×. Its transport floor is also the highest of the four local platforms
+at 2.99 ms — against Memgraph's 0.45 ms on the *identical driver and identical
+session-per-query pattern*, so that ~2.5 ms gap is Neo4j's own connection and
+transaction setup, paid before any work begins.
+
+The concurrency sweep supplies the cause rather than leaving it to inference. At
+40 clients Neo4j returned seven errors, every one of them:
 
 ```
 Neo.TransientError.General.MemoryPoolOutOfMemoryError:
 The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB
 ```
 
-That 67.2 MiB is Neo4j's transaction memory pool, derived from the 96 MB heap it
-was given inside a 256 MB container. Neo4j's memory model divides the box three
-ways — JVM heap, page cache, and JVM overhead — and at 256 MB none of the three
-gets enough. The 64 MB page cache cannot hold the store files for 352,768
-relationships, so reads fault to disk; the small heap means frequent collections;
-and collections compete with query execution for half a vCPU.
+67.2 MB is the transaction pool Neo4j derived from the 96 MB heap it was given
+inside a 256 MB container. Neo4j divides its box three ways — heap, page cache,
+JVM overhead — and at 256 MB all three are starved at once. The 64 MB page cache
+cannot hold the store files for 352,768 relationships, so reads fault to disk;
+the small heap collects constantly; and collection competes with query execution
+for half a vCPU.
 
-This is not a claim that Neo4j is a slow database. It is a claim that **Neo4j's
-architecture does not fit in 256 MB**, which is a fair thing to learn from a
-benchmark about free tiers.
+This does not say Neo4j is a slow database. It says **Neo4j's architecture does
+not fit in 256 MB** — a fair thing to learn from a benchmark about free tiers,
+and the reason its ingest (5,421 rels/s) is 8× slower than Memgraph's on an
+identical load method.
 
-### 3. Ingest differs by 14×, for the same reason
+### 4. Four scaling shapes, and CognoDB has the most headroom
 
-| | Nodes/s | Rels/s | Total |
-|---|---|---|---|
-| Memgraph | 6,199 | **34,909** | 14.6 s |
-| FalkorDB | 12,734 | 28,917 | 14.4 s |
-| ArangoDB | **14,573** | 24,118 | 16.5 s |
-| Neo4j | 555 | **2,518** | 190.2 s |
+| qps | 1 client | 10 | 40 | Shape |
+|---|---|---|---|---|
+| Memgraph | 2,780 | **3,265** | 3,262 | saturates at 10 |
+| FalkorDB | 1,884 | 1,757 | 1,815 *(1,027 rejected)* | flat, sheds load |
+| ArangoDB | 268 | 1,755 | 1,730 | **6.5× scaling** |
+| Neo4j | 178 | 182 | 239 | flat, 7 memory errors |
+| CognoDB | 4.0 | 39.5 | **155.5** | **39× — near-linear** |
 
-Identical load method everywhere — batched parameterised inserts of 10,000 rows.
-Neo4j takes **190 seconds** against Memgraph's 14.6. The two in-memory engines
-never touch disk on the write path; ArangoDB's RocksDB backend converts random
-writes into sequential ones; Neo4j writes through a page cache far too small for
-the working set.
+**CognoDB scales almost perfectly linearly** — 39× throughput for 40× clients,
+with p50 holding flat at ~250 ms throughout. That is the signature of a system
+bound by latency rather than capacity: each client spends its time waiting on
+the network, so adding clients adds throughput nearly for free. Its 4 qps at one
+client is not a capacity limit, it is one query per round trip. Whether it would
+keep scaling past 40 clients this run cannot say.
 
-Note the split in ArangoDB's column: it has the **highest node ingest** of all
-four and a middling edge rate. Node inserts are plain document writes, while every
-edge insert must also maintain the `_from`/`_to` index — the same index whose cost
-reappears in section 1.
+**FalkorDB starts at its ceiling.** Fastest single-client engine after Memgraph
+and gains nothing from more, because Redis executes commands on one thread. At
+40 clients it rejected 1,027 queries with `Max pending queries exceeded` — not a
+crash but deliberate backpressure. Its 1,815 qps counts only accepted queries,
+so that cell means "throughput while shedding load" and is not directly
+comparable with the others.
 
-### 4. Scaling curves reveal design intent
-
-| qps | 1 client | 10 clients | 40 clients |
-|---|---|---|---|
-| FalkorDB | **1,457** | 1,656 | 1,627 (465 rejected) |
-| Memgraph | 882 | **1,527** | 1,406 |
-| ArangoDB | 308 | 1,432 | 1,358 |
-| Neo4j | 115 | 79 | 149 (7 errors) |
-
-Four genuinely different shapes:
-
-**FalkorDB starts at the top and stays there.** It is the fastest single-client
-engine by a wide margin and gains almost nothing from more clients, because Redis
-executes commands on one thread. At 40 clients it rejected 465 queries with `Max
-pending queries exceeded` — not a crash but deliberate backpressure: it sheds load
-rather than degrading for everyone. Its 1,627 qps counts only the queries it
-accepted, so read that figure as "throughput while shedding 465 requests."
-
-**ArangoDB is the best scaler**, 4.6× from 1 to 10 clients — genuinely
-multi-threaded, and starting from the lowest single-client base.
-
-**Memgraph scales moderately** and peaks at 10 clients. Its two errors were
-`Cannot resolve conflicting transactions` — MVCC write-write conflicts from the
-20% write mix, expected under optimistic concurrency.
-
-**Neo4j is non-monotonic**: throughput *falls* from 115 to 79 qps when clients go
-from 1 to 10. It was already saturated at a single client, and additional
-concurrency bought contention rather than parallelism.
+**ArangoDB is the best true scaler** at 6.5×, from the lowest local starting
+point. **Neo4j does not scale at all** — 178 to 182 qps from 1 to 10 clients.
 
 ### 5. Storage: the index tax is visible
 
 | | Observable footprint |
 |---|---|
-| FalkorDB | 31.0 MB used (79.8 MB peak) |
-| ArangoDB | 73.3 MB total — 2.3 MB nodes, 31.4 MB edges, **39.6 MB indexes** |
-| Memgraph | 184.5 MB resident, 25.0 MB on disk |
-| Neo4j | Not observable (JMX store metrics unavailable on this tier) |
+| FalkorDB | **31.0 MB** used (79.2 MB peak) |
+| ArangoDB | 74.1 MB — 2.3 MB nodes, 31.6 MB edges, **40.2 MB indexes** |
+| Memgraph | 179.6 MB resident, 28.4 MB on disk |
+| Neo4j | Not observable — JMX store metrics unavailable on this tier |
+| CognoDB | Not observable — managed tier exposes no storage introspection |
 
-Indexes are **54% of ArangoDB's stored bytes**. The same design decision that
-costs it deep traversals costs it space. FalkorDB holds the identical graph in
-31 MB — sparse matrices are a genuinely compact encoding of adjacency.
+Indexes are **54% of ArangoDB's stored bytes**: the design decision that costs it
+deep traversals costs it space too. FalkorDB holds the identical graph in 31 MB.
+
+Two of five platforms expose nothing, which is itself worth noting — on a
+managed tier you generally cannot see what you are paying to store.
 
 ### So what would I actually use?
 
-On this hardware and this workload shape:
+On this hardware, this dataset shape, and with the variance above in mind:
 
-- **Deep traversal on a small instance:** FalkorDB, decisively. Fastest at every
-  depth, most compact, and flat with hop count — provided your concurrency is low
-  or you can handle backpressure.
-- **Mixed concurrent load:** ArangoDB scales best and gives you a document model,
-  as long as your traversals stay shallow.
-- **Predictable latency:** Memgraph. Strong across the board with the tightest
-  p95/p50 ratios and no single catastrophic column.
+- **Deep traversal on a small instance:** FalkorDB or Memgraph. Both stay flat
+  with hop depth; FalkorDB is far more compact, Memgraph handles concurrency
+  much better.
+- **Concurrent mixed load:** Memgraph on raw throughput, ArangoDB if you want
+  scaling headroom and a document model and your traversals stay shallow.
+- **CognoDB:** the engine is competitive — ~1.5 ms net for a 1-hop traversal and
+  ingest 3× faster than local Neo4j. The deciding factor is **where your client
+  runs**. Co-located, these numbers would look completely different; across the
+  internet, 240 ms per query dominates everything else about it. Benchmarking it
+  from a client in the same region is the obvious next run, and this harness
+  supports it without changes.
 - **Neo4j:** give it more memory. Nothing here indicts the engine at a sane size;
   it indicts running it in 256 MB.
 
 The honest headline is not that one database won. It is that on a fixed small
-budget, the choice of adjacency representation — pointers, matrices, or indexed
-documents — dominates every other factor by an order of magnitude, and it does so
-in opposite directions depending on how deep you traverse.
+budget, **two things dominate everything else — where your client sits relative
+to the database, and how the engine represents adjacency** — and a benchmark
+that measures neither will confidently rank them wrong.
 
 ---
 
 ## Caveats
 
-Every one of these makes some number in this README less trustworthy than it
-looks. They are listed because a benchmark without them is marketing.
+Every one of these makes some number above less trustworthy than it looks. They
+are listed because a benchmark without them is marketing.
 
-**CognoDB was not measured in this run.** No free instance was provisioned before
-the reporting run, so CognoDB appears in every table as *not configured* rather
-than being estimated, extrapolated, or quietly dropped. The harness supports it
-fully — add the four `COGNODB_*` variables to `.env` and re-run — but as published,
-**this document compares four engines, not five.** That is the single largest gap
-between what the brief asked for and what is here, and no amount of surrounding
-rigour closes it.
+**CognoDB is remote; the other four are local.** The largest asymmetry in this
+comparison and the reason the [transport baseline](#1-almost-all-of-cognodbs-latency-is-the-network-and-the-harness-can-prove-it)
+exists. CognoDB pays a ~238 ms public-internet round trip on every operation
+that the loopback containers do not. The harness measures that floor so it can
+be subtracted, but subtraction is an estimate, not a correction: it assumes
+transport and query cost are independent and additive, which is approximately
+but not exactly true. **The clean fix is to benchmark all five as managed
+endpoints from one client region**, which this harness supports unchanged and
+which is the obvious next run.
 
-**FalkorDB's 40-client throughput excludes 465 rejected queries.** It returned
-`Max pending queries exceeded` for those and they are counted as errors, not as
-completed operations. Its 1,627 qps is therefore "throughput while shedding
-load", which is not the same measurement as the other engines' figures at that
-concurrency level. Compare that row with care.
+**Run-to-run variance is large — larger than several differences in the tables.**
+Worst spreads were 100.7%, 69.8% and 52.1%. Across two full runs of this suite,
+ArangoDB's ingest moved 54% and its 3-hop p50 moved 3×. Treat anything under
+about 2× as unresolved rather than as a result. Three repeats is enough to
+expose the noise, not enough to average it away.
 
-**Run-to-run variance is large — larger than several of the differences.** Worst
-spreads were 157.6%, 144.9% and 80.3%. Any gap under about 2× in these tables
-should be treated as unresolved, not as a result.
+**FalkorDB's 40-client throughput excludes 1,027 rejected queries.** It returned
+`Max pending queries exceeded` and those are counted as errors, not completed
+operations. Its 1,815 qps is "throughput while shedding load", which is not the
+same measurement as the other engines' figures at that concurrency.
 
-**When CognoDB is added, it will be remote while the others are local.** This
-asymmetry does not affect the numbers below — CognoDB was not measured — but it
-will affect any run that includes it, and it is described in full under [the
-fairness problem](#the-fairness-problem). A managed endpoint pays a
-public-internet round trip that loopback containers do not, and on
-sub-millisecond workloads that round trip can exceed the query itself. Read any
-future CognoDB row as an upper bound on latency rather than a measurement of the
-engine.
-
-**"Cold start" here means first-query-after-load, not a cold process.** The load
-has already populated caches and page tables by the time the cold measurement
-runs. A true cold-start number would require restarting each database with a
-populated volume and querying before anything warms — worth doing, not done here.
-Read the cold column as "first touch of this query shape", which is the weaker
-claim it actually supports.
+**"Cold start" here means first-query-after-load, not a cold process.** Loading
+has already populated caches by the time that measurement runs. A true
+cold-start number would need each database restarted against a populated volume
+and queried before anything warms. Read that column as "first touch of this
+query shape" — the weaker claim it actually supports.
 
 **Burstable vCPU is not a steady resource.** Both `cpus: 0.5` under cgroups and
-CognoDB's "0.5 burstable" allow short excursions above the nominal limit. A
-100-iteration workload that fits inside a burst window will look faster than a
-sustained one. This is exactly why the read suite is repeated three times and the
-spread reported — check the variance table before believing any two platforms
-differ by less than their spread.
+CognoDB's "0.5 burstable" permit short excursions above the nominal limit, so a
+workload that fits inside a burst window looks faster than a sustained one.
 
-**The client is shared.** All platforms are driven from one machine, which is what
-the brief requires for fairness, but at 40 concurrent clients the harness itself
-consumes real CPU. Throughput at the top of the sweep is partly a measurement of
-the client. The *shape* of each curve is more trustworthy than its absolute
-height.
+**The client is shared, and at 40 clients it is part of the measurement.** All
+platforms are driven from one machine, which is what fairness requires, but the
+harness itself consumes real CPU at the top of the sweep. The *shape* of each
+curve is more trustworthy than its absolute height.
 
-**Local containers share a host.** The four capped containers run simultaneously
-on one machine. Cgroup limits partition CPU and memory but not disk I/O bandwidth
-or memory-bus contention. Sequential runs on an otherwise idle host would be
-cleaner.
+**Local containers share a host.** Four capped containers run simultaneously.
+Cgroups partition CPU and memory but not disk I/O bandwidth or memory-bus
+contention. Sequential runs on an idle host would be cleaner.
 
 **The aggregation workload is skewed by data, not engines.** 58.8% of nodes carry
-the unknown-year sentinel, so the group-by is dominated by one bucket. It is a
-real aggregation over real data, but it is not a balanced one.
+the unknown-year sentinel, so the group-by is dominated by a single bucket. Real
+aggregation over real data, but not a balanced one.
 
-**Two platforms ran at their memory ceiling.** Neo4j and ArangoDB were both
-observed sitting at essentially 256/256 MB during the run. Neither was OOM-killed
-and both passed load verification, but an engine operating at its limit is an
-engine spending time on eviction, and that is part of what the numbers show.
+**Two platforms ran at their memory ceiling.** Neo4j and ArangoDB both sat at
+essentially 256/256 MB during the run. Neither was OOM-killed and both passed
+load verification, but an engine operating at its limit spends time on eviction,
+and that is part of what these numbers show.
 
 **Query equivalence is verified by result, not by plan.** The parity check proves
-every engine returned the same counts. It does not prove they chose comparable
-execution strategies — an engine could reach the right answer via a plan the
-others would never pick. Confirming that would mean reading five query planners,
-which is beyond this run.
+every engine returned identical counts. It does not prove they chose comparable
+execution strategies — an engine could reach the right answer by a route the
+others would never take. Confirming that means reading five query planners.
 
-**Single dataset, single shape.** cit-HepTh is a sparse, scale-free citation
-network. Results on a dense social graph, a supply chain, or a property-heavy
-graph could differ substantially. Nothing here generalises past this shape.
+**CognoDB's depth sensitivity has no established mechanism.** Section 2 notes its
+cost grows sharply with hop depth in a way that resembles index-backed
+adjacency. The instance exposes no query plan and no storage internals, so that
+resemblance is a hypothesis, not a finding.
+
+**Single dataset, single shape.** cit-HepTh is sparse and scale-free. A dense
+social graph, a supply chain, or a property-heavy graph could reorder these
+results entirely. Nothing here generalises past this shape.
 
 ---
 

@@ -237,6 +237,72 @@ def chart_lookups(results: dict, out_dir: Path) -> Path | None:
     return path
 
 
+def chart_transport(results: dict, out_dir: Path) -> Path | None:
+    """Transport floor against measured 1-hop cost.
+
+    Without this the traversal charts read as "CognoDB is 600x slower", when
+    almost all of that bar is a wide-area round trip. Showing the floor beside
+    the work makes the distinction visible rather than relegating it to prose.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    platforms = [
+        p for p in _completed(results)
+        if (p.get("baseline_rtt") or {}).get("p50") is not None
+    ]
+    if not platforms:
+        return None
+    colors = _colors(_completed(results))
+
+    ordered = sorted(platforms, key=lambda p: p["baseline_rtt"]["p50"])
+    names = [p["name"] for p in ordered]
+    floors = [p["baseline_rtt"]["p50"] for p in ordered]
+    one_hop = [p["workloads"].get("1-hop", {}).get("p50", float("nan")) for p in ordered]
+    y = np.arange(len(ordered))
+
+    fig, ax = plt.subplots(figsize=(9, 0.72 * len(ordered) + 2.2), facecolor=SURFACE)
+    ax.barh(y - 0.19, floors, height=0.34, color=[colors[p["id"]] for p in ordered],
+            edgecolor=SURFACE, linewidth=1.5, zorder=3, label="transport floor (RETURN 1)")
+    ax.barh(y + 0.19, one_hop, height=0.34, color=[colors[p["id"]] for p in ordered],
+            edgecolor=SURFACE, linewidth=1.5, zorder=3, alpha=0.45,
+            label="1-hop traversal p50")
+
+    for i, (f, h) in enumerate(zip(floors, one_hop)):
+        ax.annotate(f"{f:,.2f}", (f, i - 0.19), textcoords="offset points",
+                    xytext=(5, 0), va="center", fontsize=8, color=INK_MUTED, zorder=4)
+        if h == h:
+            ax.annotate(f"{h:,.2f}", (h, i + 0.19), textcoords="offset points",
+                        xytext=(5, 0), va="center", fontsize=8, color=INK_MUTED, zorder=4)
+
+    _style_axes(ax)
+    ax.grid(axis="y", visible=False)
+    ax.grid(axis="x", color=GRID, linewidth=1)
+    ax.set_xscale("log")
+    ax.set_yticks(y, names)
+    ax.set_xlabel("milliseconds (log scale)", color=INK_MUTED, fontsize=9)
+    ax.set_title("How much of a query is transport",
+                 color=INK, fontsize=12, fontweight="600", loc="left", pad=12)
+    # Neutral proxy swatches: each platform already carries its own hue, so a
+    # legend keyed to one platform's colour would imply a meaning that is not
+    # there. Solid vs. translucent is the distinction being made.
+    from matplotlib.patches import Patch
+
+    handles = [
+        Patch(facecolor=INK_MUTED, edgecolor=SURFACE, label="transport floor (RETURN 1)"),
+        Patch(facecolor=INK_MUTED, edgecolor=SURFACE, alpha=0.45,
+              label="1-hop traversal p50"),
+    ]
+    legend = ax.legend(handles=handles, frameon=False, fontsize=9, loc="upper left",
+                       bbox_to_anchor=(0, -0.18), ncol=2)
+    for t in legend.get_texts():
+        t.set_color(INK_MUTED)
+
+    path = out_dir / "transport_baseline.png"
+    _save(fig, path)
+    return path
+
+
 # --------------------------------------------------------------------- tables
 
 
@@ -425,6 +491,7 @@ def write_report(results: dict, results_dir: Path) -> Path:
         "traversal_p50": chart_traversal(results, charts_dir, "p50"),
         "traversal_p95": chart_traversal(results, charts_dir, "p95"),
         "ingest": chart_ingest(results, charts_dir),
+        "transport": chart_transport(results, charts_dir),
         "concurrency": chart_concurrency(results, charts_dir),
         "lookups": chart_lookups(results, charts_dir),
     }
@@ -480,6 +547,7 @@ def write_report(results: dict, results_dir: Path) -> Path:
         table_parity(results),
         "## Transport baseline\n",
         table_baseline(results),
+        embed("transport", "Transport floor vs measured query cost"),
         "## Ingest throughput\n",
         table_ingest(results),
         embed("ingest", "Ingest throughput by platform"),
@@ -569,6 +637,7 @@ def build_results_section(results: dict, charts_rel: str = "results/charts") -> 
         "transport. It is the number to subtract before comparing a managed "
         "endpoint against a container on loopback.\n",
         table_baseline(results),
+        embed("transport_baseline.png", "Transport floor vs measured query cost"),
         "### Ingest throughput\n",
         table_ingest(results),
         embed("ingest_throughput.png", "Ingest throughput by platform"),
