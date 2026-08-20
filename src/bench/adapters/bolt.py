@@ -31,6 +31,10 @@ Q_DELETE = (
     "MATCH (:Paper {paper_id:$src})-[r:CITES {benchmark:true}]->(:Paper {paper_id:$dst}) "
     "DELETE r"
 )
+Q_DELETE_ALL_BENCHMARK = (
+    "MATCH ()-[r:CITES {benchmark:true}]->() WITH r LIMIT $limit "
+    "DELETE r RETURN count(r) AS c"
+)
 Q_NODE_COUNT = "MATCH (n:Paper) RETURN count(n) AS c"
 Q_REL_COUNT = "MATCH ()-[r:CITES]->() RETURN count(r) AS c"
 
@@ -193,6 +197,17 @@ class BoltAdapter(GraphAdapter):
 
     def delete_edge(self, src_id: int, dst_id: int) -> None:
         self._run(Q_DELETE, src=src_id, dst=dst_id)
+
+    def delete_benchmark_edges(self) -> int:
+        # Batched: a single DELETE of a large write set exhausts the heap on a
+        # 256 MB instance, the same failure mode as reset().
+        removed = 0
+        while True:
+            rows = self._run(Q_DELETE_ALL_BENCHMARK, limit=5000)
+            count = rows[0]["c"] if rows else 0
+            removed += count
+            if count == 0:
+                return removed
 
     # ---------------------------------------------------------------- inspection
 

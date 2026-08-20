@@ -32,6 +32,10 @@ Q_DELETE = (
     "MATCH (:Paper {paper_id:$src})-[r:CITES {benchmark:true}]->(:Paper {paper_id:$dst}) "
     "DELETE r"
 )
+Q_DELETE_ALL_BENCHMARK = (
+    "MATCH ()-[r:CITES {benchmark:true}]->() WITH r LIMIT $limit "
+    "DELETE r RETURN count(r)"
+)
 Q_NODE_COUNT = "MATCH (n:Paper) RETURN count(n)"
 Q_REL_COUNT = "MATCH ()-[r:CITES]->() RETURN count(r)"
 
@@ -150,6 +154,14 @@ class FalkorAdapter(GraphAdapter):
 
     def delete_edge(self, src_id: int, dst_id: int) -> None:
         self._q(Q_DELETE, {"src": src_id, "dst": dst_id})
+
+    def delete_benchmark_edges(self) -> int:
+        removed = 0
+        while True:
+            count = self._scalar(Q_DELETE_ALL_BENCHMARK, {"limit": 5000})
+            removed += count
+            if count == 0:
+                return removed
 
     # ---------------------------------------------------------------- inspection
 

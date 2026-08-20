@@ -1,0 +1,114 @@
+# Platform definitions.
+#
+# Credentials are NEVER written here. Every secret is a ${ENV_VAR} reference
+# resolved at load time; a platform whose required variables are unset is
+# skipped and reported as "not configured" rather than silently omitted.
+#
+# The parity tier below is the CognoDB free (c0) instance's advertised
+# resources. Every other platform is held to the same figures -- see the
+# fairness section of the README.
+
+parity_tier:
+  vcpu: "0.5 vCPU (burstable)"
+  ram: "256 MB"
+  storage: "1 GB"
+
+defaults:
+  batch_size: 10000
+  start_node_count: 100
+  iterations: 100
+  warmup_iterations: 20
+  seed: 1337
+
+platforms:
+  - id: cognodb
+    name: CognoDB Cloud
+    adapter: bolt
+    flavor: neo4j
+    connection:
+      uri: "${COGNODB_URI}"
+      user: "${COGNODB_USER:-cognodb}"
+      password: "${COGNODB_PASSWORD}"
+    spec:
+      tier: "Free (c0)"
+      vcpu: "0.5 vCPU (burstable)"
+      ram: "256 MB"
+      storage: "1 GB"
+      region: "${COGNODB_REGION:-not recorded}"
+      notes: >-
+        Managed cloud instance. Specs are those advertised by the CognoDB
+        console for the free c0 tier; they are not independently verifiable
+        from the client side.
+
+  - id: neo4j
+    name: Neo4j
+    adapter: bolt
+    flavor: neo4j
+    connection:
+      uri: "${NEO4J_URI:-bolt://localhost:7687}"
+      user: "${NEO4J_USER:-neo4j}"
+      password: "${NEO4J_PASSWORD:-benchmarkpw}"
+    spec:
+      tier: "Community 5.26, container-capped to parity tier"
+      vcpu: "0.5 vCPU (cgroup cpu quota)"
+      ram: "256 MB (cgroup memory limit)"
+      storage: "1 GB (dataset well under limit)"
+      region: "local"
+      notes: >-
+        JVM heap capped at 96 MB and page cache at 64 MB so the process fits
+        inside the 256 MB container limit without being OOM-killed.
+
+  - id: memgraph
+    name: Memgraph
+    adapter: bolt
+    flavor: memgraph
+    connection:
+      uri: "${MEMGRAPH_URI:-bolt://localhost:7688}"
+      user: "${MEMGRAPH_USER:-}"
+      password: "${MEMGRAPH_PASSWORD:-}"
+    spec:
+      tier: "Memgraph 2.22 (in-memory transactional), container-capped"
+      vcpu: "0.5 vCPU (cgroup cpu quota)"
+      ram: "256 MB (cgroup memory limit)"
+      storage: "1 GB"
+      region: "local"
+      notes: >-
+        In-memory engine. The 256 MB cap is a harder constraint here than for
+        disk-backed engines, since the working set cannot spill.
+
+  - id: arangodb
+    name: ArangoDB
+    adapter: arango
+    connection:
+      uri: "${ARANGO_URI:-http://localhost:8529}"
+      user: "${ARANGO_USER:-root}"
+      password: "${ARANGO_PASSWORD:-benchmarkpw}"
+      database: "${ARANGO_DATABASE:-benchmark}"
+    spec:
+      tier: "ArangoDB 3.11 Community, container-capped"
+      vcpu: "0.5 vCPU (cgroup cpu quota)"
+      ram: "256 MB (cgroup memory limit)"
+      storage: "1 GB"
+      region: "local"
+      notes: >-
+        Multi-model engine queried with AQL rather than Cypher. Observed
+        sitting at the memory ceiling at idle, so its results carry the most
+        memory-pressure risk of the set.
+
+  - id: falkordb
+    name: FalkorDB
+    adapter: falkor
+    connection:
+      host: "${FALKOR_HOST:-localhost}"
+      port: "${FALKOR_PORT:-6379}"
+      password: "${FALKOR_PASSWORD:-}"
+      graph: "${FALKOR_GRAPH:-benchmark}"
+    spec:
+      tier: "FalkorDB 4.2 (Redis module), container-capped"
+      vcpu: "0.5 vCPU (cgroup cpu quota)"
+      ram: "256 MB (cgroup memory limit)"
+      storage: "1 GB"
+      region: "local"
+      notes: >-
+        Sparse-matrix / GraphBLAS engine inside Redis. Speaks Cypher, so
+        queries stay comparable while the storage engine differs completely.

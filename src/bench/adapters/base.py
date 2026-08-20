@@ -161,6 +161,15 @@ class GraphAdapter(ABC):
     def delete_edge(self, src_id: int, dst_id: int) -> None:
         """Undo `insert_edge` so the mixed workload does not grow the graph without bound."""
 
+    @abstractmethod
+    def delete_benchmark_edges(self) -> int:
+        """Remove every relationship written by the mixed workload.
+
+        Returns the number removed so the runner can assert it matches the
+        number written. A silent mismatch would mean later concurrency levels
+        query a larger graph than earlier ones.
+        """
+
     # ---------------------------------------------------------------- inspection
 
     @abstractmethod

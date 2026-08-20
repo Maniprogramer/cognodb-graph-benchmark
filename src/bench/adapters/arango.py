@@ -52,6 +52,13 @@ Q_INSERT = """
 INSERT {{ _from: @from, _to: @to, benchmark: true }} INTO {edge}
 """
 
+Q_DELETE_ALL_BENCHMARK = """
+RETURN LENGTH(
+  FOR e IN {edge} FILTER e.benchmark == true LIMIT @limit
+    REMOVE e IN {edge} RETURN 1
+)
+"""
+
 Q_DELETE = """
 FOR e IN {edge}
   FILTER e._from == @from AND e._to == @to AND e.benchmark == true
@@ -191,6 +198,15 @@ class ArangoAdapter(GraphAdapter):
             Q_DELETE.format(edge=EDGE_COLLECTION),
             **{"from": f"{NODE_COLLECTION}/{src_id}", "to": f"{NODE_COLLECTION}/{dst_id}"},
         )
+
+    def delete_benchmark_edges(self) -> int:
+        removed = 0
+        query = Q_DELETE_ALL_BENCHMARK.format(edge=EDGE_COLLECTION)
+        while True:
+            count = self._aql(query, limit=5000)[0]
+            removed += count
+            if count == 0:
+                return removed
 
     # ---------------------------------------------------------------- inspection
 
