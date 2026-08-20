@@ -139,9 +139,15 @@ def run_platform(
     edges,
     plan,
     settings: dict,
-    log=print,
+    log=None,
 ) -> PlatformRun:
     """Execute the full sequence against a single platform."""
+    # Flushed by default: a long run redirected to a file is otherwise
+    # block-buffered and shows no progress until it finishes.
+    if log is None:
+        def log(msg):
+            print(msg, flush=True)
+
     run = PlatformRun(
         id=platform_cfg.id,
         name=platform_cfg.name,
