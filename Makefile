@@ -6,7 +6,7 @@ COMPOSE := docker compose -f docker/docker-compose.yml
 export PYTHONPATH := src
 
 .DEFAULT_GOAL := help
-.PHONY: help setup up down fresh dataset bench quick report test clean logs stats
+.PHONY: help setup up down fresh check dataset bench quick report test clean logs stats
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -29,6 +29,9 @@ fresh: ## Recreate the local platforms from empty volumes (recommended before a 
 
 down: ## Stop and remove the local platforms and their volumes
 	$(COMPOSE) down -v
+
+check: ## Verify every configured platform accepts connections (fast credential check)
+	$(PY) scripts/wait_for_platforms.py
 
 dataset: ## Download and canonicalise the dataset
 	$(PY) -m bench dataset

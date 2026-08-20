@@ -271,6 +271,7 @@ parity table stays truthful.
 
 | Command | Effect |
 |---|---|
+| `make check` | Verify every configured platform accepts connections — fails fast on a bad credential |
 | `make quick` | Short smoke run — verifies the harness, not for reporting |
 | `make test` | Run the unit test suite |
 | `make stats` | Live container memory/CPU against the caps |
