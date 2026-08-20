@@ -1,0 +1,66 @@
+# Local platforms, every one capped to the same "parity tier" as the CognoDB
+# free (c0) instance: 0.5 vCPU, 256 MB RAM, 1 GB disk.
+#
+# Section 4 of the assignment explicitly permits "self-hosted deployments
+# capped to the same resources". Capping locally is in fact *stricter* than
+# comparing cloud free tiers against each other, because cloud tiers advertise
+# resources they do not always honour and hide their noisy-neighbour behaviour.
+# The cloud endpoints remain fully supported -- set the URI env vars and the
+# same harness runs against them unchanged.
+#
+# Override the caps for a sensitivity run:
+#   PARITY_CPUS=1.0 PARITY_MEM=1g docker compose -f docker/docker-compose.yml up -d
+
+x-parity: &parity
+  deploy:
+    resources:
+      limits:
+        cpus: "${PARITY_CPUS:-0.5}"
+        memory: "${PARITY_MEM:-256m}"
+  restart: unless-stopped
+
+services:
+  neo4j:
+    <<: *parity
+    image: neo4j:5.26.0-community
+    container_name: bench-neo4j
+    environment:
+      NEO4J_AUTH: "neo4j/benchmarkpw"
+      # Sized to fit inside the 256 MB cap: heap + pagecache must leave room
+      # for the JVM's own non-heap footprint or the container is OOM-killed.
+      NEO4J_server_memory_heap_initial__size: "96m"
+      NEO4J_server_memory_heap_max__size: "96m"
+      NEO4J_server_memory_pagecache_size: "64m"
+      NEO4J_db_tx__log_rotation_retention__policy: "100M size"
+    ports: ["7687:7687"]
+    volumes: ["neo4j-data:/data"]
+
+  memgraph:
+    <<: *parity
+    image: memgraph/memgraph:2.22.0
+    container_name: bench-memgraph
+    command: ["--telemetry-enabled=false", "--log-level=WARNING", "--storage-mode=IN_MEMORY_TRANSACTIONAL"]
+    ports: ["7688:7687"]
+    volumes: ["memgraph-data:/var/lib/memgraph"]
+
+  arangodb:
+    <<: *parity
+    image: arangodb:3.11.10
+    container_name: bench-arangodb
+    environment:
+      ARANGO_ROOT_PASSWORD: "benchmarkpw"
+    ports: ["8529:8529"]
+    volumes: ["arango-data:/var/lib/arangodb3"]
+
+  falkordb:
+    <<: *parity
+    image: falkordb/falkordb:v4.2.2
+    container_name: bench-falkordb
+    ports: ["6379:6379"]
+    volumes: ["falkor-data:/data"]
+
+volumes:
+  neo4j-data:
+  memgraph-data:
+  arango-data:
+  falkor-data:
