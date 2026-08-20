@@ -395,3 +395,31 @@ class TestBaselineShareRendering:
         sample_results["platforms"][0]["baseline_rtt"] = {"p50": 0.5, "p95": 0.8, "min": 0.4}
         sample_results["platforms"][0]["workloads"]["1-hop"]["p50"] = 2.0
         assert "25%" in table_baseline(sample_results)
+
+
+class TestSmokeRunIsolation:
+    """--quick must never overwrite a reporting run's results or README."""
+
+    def test_readme_not_injected_from_a_scratch_subdirectory(self, sample_results, tmp_path):
+        from bench.report import README_END, README_START, write_report
+
+        # Layout mimicking repo/results/smoke/ -- README lives two levels up.
+        repo = tmp_path
+        (repo / "src" / "bench").mkdir(parents=True)
+        readme = repo / "README.md"
+        original = f"# T\n\n{README_START}\n\nPUBLISHED\n\n{README_END}\n"
+        readme.write_text(original)
+
+        write_report(sample_results, repo / "results" / "smoke")
+        assert readme.read_text() == original, "smoke run clobbered the published README"
+
+    def test_readme_injected_from_canonical_results_dir(self, sample_results, tmp_path):
+        from bench.report import README_END, README_START, write_report
+
+        repo = tmp_path
+        (repo / "src" / "bench").mkdir(parents=True)
+        readme = repo / "README.md"
+        readme.write_text(f"# T\n\n{README_START}\n\nPLACEHOLDER\n\n{README_END}\n")
+
+        write_report(sample_results, repo / "results")
+        assert "PLACEHOLDER" not in readme.read_text()

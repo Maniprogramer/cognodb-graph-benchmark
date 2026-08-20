@@ -21,6 +21,9 @@ data/*
 *.csv.gz
 *.tar.gz
 
+# Smoke-run output: throwaway numbers, never a deliverable
+results/smoke/
+
 # OS / editor
 .DS_Store
 .idea/

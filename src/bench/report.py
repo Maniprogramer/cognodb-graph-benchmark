@@ -588,8 +588,13 @@ def write_report(results: dict, results_dir: Path) -> Path:
     report_path = results_dir / "REPORT.md"
     report_path.write_text("\n".join(sections))
 
-    # Keep the README's results matrix generated rather than hand-maintained.
-    inject_readme(results, results_dir.parent / "README.md")
+    # Keep the README's results matrix generated rather than hand-maintained --
+    # but only from the canonical results directory. A smoke run writes to a
+    # subdirectory, and rewriting the published matrix with throwaway numbers
+    # would be worse than not generating it at all.
+    readme = results_dir.parent / "README.md"
+    if readme.exists() and (results_dir.parent / "src" / "bench").is_dir():
+        inject_readme(results, readme)
     return report_path
 
 

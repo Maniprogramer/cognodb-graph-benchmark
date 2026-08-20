@@ -107,6 +107,12 @@ def cmd_run(args) -> int:
     }
 
     results_dir = Path(args.results_dir)
+    # A smoke run must never overwrite a reporting run. --quick is explicitly
+    # "not for reporting", so unless the caller named a directory it writes to
+    # a scratch location and leaves results/ and the README untouched.
+    if getattr(args, "quick", False) and args.results_dir == str(DEFAULT_RESULTS):
+        results_dir = DEFAULT_RESULTS / "smoke"
+        print(f"\n--quick: writing to {results_dir} (reporting results left untouched)")
     results_dir.mkdir(parents=True, exist_ok=True)
     out = results_dir / "results.json"
     out.write_text(json.dumps(results, indent=2, default=str))
