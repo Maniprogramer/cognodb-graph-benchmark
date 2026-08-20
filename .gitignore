@@ -1,0 +1,24 @@
+# Secrets - never commit connection URIs or passwords
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Data + results artifacts
+data/
+*.csv
+*.csv.gz
+*.tar.gz
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
