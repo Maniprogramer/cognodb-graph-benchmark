@@ -1,0 +1,12 @@
+{
+  "name": "SNAP cit-HepTh (arXiv HEP-Th citation network)",
+  "source_url": "https://snap.stanford.edu/data/cit-HepTh.html",
+  "node_count": 27769,
+  "relationship_count": 352768,
+  "sampled": false,
+  "sample_seed": null,
+  "nodes_with_known_year": 11444,
+  "year_coverage_pct": 41.2,
+  "nodes_csv_sha256": "1f3b0b5d41e8b2f27e885584adb214547798e8dde360bc7474a86f6de21b149e",
+  "edges_csv_sha256": "0907ed5b2117de9ddaaff8906b9e122a443f1c9b0c03e0b2b574912020bc1bba"
+}

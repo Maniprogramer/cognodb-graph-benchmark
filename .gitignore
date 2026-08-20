@@ -12,8 +12,11 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# Data + results artifacts
-data/
+# Data artifacts: the dataset is rebuilt by `make dataset`, but the manifest
+# (counts + SHA-256 of the canonical CSVs) is committed as proof that every
+# platform loaded identical input.
+data/*
+!data/manifest.json
 *.csv
 *.csv.gz
 *.tar.gz
