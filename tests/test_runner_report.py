@@ -375,3 +375,23 @@ class TestBaselineTable:
 
         sample_results["platforms"][0]["baseline_rtt"] = {"error": "TimeoutError: x"}
         assert "TimeoutError" in table_baseline(sample_results)
+
+
+class TestBaselineShareRendering:
+    """A floor above the measured workload means 'unmeasurable', not '158%'."""
+
+    def test_share_at_floor_when_baseline_exceeds_workload(self, sample_results):
+        from bench.report import table_baseline
+
+        sample_results["platforms"][0]["baseline_rtt"] = {"p50": 0.67, "p95": 2.7, "min": 0.6}
+        sample_results["platforms"][0]["workloads"]["1-hop"]["p50"] = 0.42
+        table = table_baseline(sample_results)
+        assert "at floor" in table
+        assert "%" not in table.split("at floor")[0].split("|")[-2]
+
+    def test_normal_share_still_percentage(self, sample_results):
+        from bench.report import table_baseline
+
+        sample_results["platforms"][0]["baseline_rtt"] = {"p50": 0.5, "p95": 0.8, "min": 0.4}
+        sample_results["platforms"][0]["workloads"]["1-hop"]["p50"] = 2.0
+        assert "25%" in table_baseline(sample_results)

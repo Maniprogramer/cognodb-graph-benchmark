@@ -199,17 +199,20 @@ def run_platform(
 
         run.cold_start_ms = measure_cold_start(adapter, plan)
 
-        # Transport floor, measured after the load so the connection is
-        # established and any lazy handshake is already paid.
+        log(f"  {platform_cfg.name}: warming up ({settings['warmup_iterations']} iterations)")
+        adapter.warmup(plan.start_nodes, settings["warmup_iterations"], plan)
+
+        # Transport floor, measured *after* warm-up so it is directly
+        # comparable with the warm workload percentiles below. Measured cold it
+        # was not: an early run showed Memgraph's baseline exceeding its own
+        # 1-hop p50, which is impossible for a real floor and was purely an
+        # artefact of comparing a cold number against warm ones.
         try:
             run.baseline_rtt = adapter.baseline_rtt_ms()
             log(f"  {platform_cfg.name}: transport baseline "
                 f"{run.baseline_rtt['p50']:.2f} ms p50")
         except Exception as exc:
             run.baseline_rtt = {"error": f"{type(exc).__name__}: {exc}"}
-
-        log(f"  {platform_cfg.name}: warming up ({settings['warmup_iterations']} iterations)")
-        adapter.warmup(plan.start_nodes, settings["warmup_iterations"], plan)
 
         repeats = settings.get("repeats", 1)
         all_runs: list[dict] = []

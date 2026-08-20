@@ -354,11 +354,14 @@ def table_baseline(results: dict) -> str:
             continue
         one_hop = p["workloads"].get("1-hop", {}).get("p50")
         floor = rtt.get("p50")
-        share = (
-            f"{100 * floor / one_hop:.0f}%"
-            if floor and one_hop and one_hop > 0
-            else "—"
-        )
+        if not (floor and one_hop and one_hop > 0):
+            share = "—"
+        elif floor >= one_hop:
+            # The workload is not distinguishable from an empty query: its cost
+            # is at or below the transport floor, so no useful share exists.
+            share = "at floor"
+        else:
+            share = f"{100 * floor / one_hop:.0f}%"
         rows.append([
             p["name"], _fmt(floor), _fmt(rtt.get("p95")), _fmt(one_hop), share,
         ])

@@ -1,12 +1,12 @@
 {
-  "run_id": "20260820T155856Z",
+  "run_id": "20260820T165121Z",
   "environment": {
     "hostname": "Manikantas-MacBook-Air.local",
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
     "processor": "arm",
     "cpu_count": 8,
     "python": "3.13.6",
-    "timestamp_utc": "2026-08-20T15:58:56.752970+00:00"
+    "timestamp_utc": "2026-08-20T16:51:21.701935+00:00"
   },
   "parity_tier": {
     "vcpu": "0.5 vCPU (burstable)",
@@ -59,6 +59,7 @@
     "workloads": {
       "1-hop": {
         "values": {
+          "CognoDB Cloud": 1669,
           "Neo4j": 1669,
           "Memgraph": 1669,
           "ArangoDB": 1669,
@@ -68,6 +69,7 @@
       },
       "2-hop": {
         "values": {
+          "CognoDB Cloud": 18013,
           "Neo4j": 18013,
           "Memgraph": 18013,
           "ArangoDB": 18013,
@@ -77,6 +79,7 @@
       },
       "3-hop": {
         "values": {
+          "CognoDB Cloud": 95111,
           "Neo4j": 95111,
           "Memgraph": 95111,
           "ArangoDB": 95111,
@@ -86,6 +89,7 @@
       },
       "point-lookup": {
         "values": {
+          "CognoDB Cloud": 100,
           "Neo4j": 100,
           "Memgraph": 100,
           "ArangoDB": 100,
@@ -95,6 +99,7 @@
       },
       "filtered-lookup": {
         "values": {
+          "CognoDB Cloud": 114100,
           "Neo4j": 114100,
           "Memgraph": 114100,
           "ArangoDB": 114100,
@@ -104,6 +109,7 @@
       },
       "aggregation": {
         "values": {
+          "CognoDB Cloud": 1200,
           "Neo4j": 1200,
           "Memgraph": 1200,
           "ArangoDB": 1200,
@@ -117,25 +123,256 @@
     {
       "id": "cognodb",
       "name": "CognoDB Cloud",
-      "query_language": "unknown",
+      "query_language": "Cypher (Bolt)",
       "spec": {
-        "tier": "Free (c0)",
         "vcpu": "0.5 vCPU (burstable)",
         "ram": "256 MB",
         "storage": "1 GB",
-        "region": "not recorded",
-        "notes": "Managed cloud instance. Specs are those advertised by the CognoDB console for the free c0 tier; they are not independently verifiable from the client side."
+        "tier": "Free (c0)",
+        "region": "bravo",
+        "notes": "Managed cloud instance. Specs are those advertised by the CognoDB console for the free c0 tier; they are not independently verifiable from the client side.",
+        "observable": {
+          "status": "not observable (JMX store metrics unavailable on this tier)"
+        }
       },
-      "indexes": [],
-      "load": null,
-      "verification": null,
-      "cold_start_ms": {},
-      "workloads": {},
-      "workload_results": {},
-      "concurrency": [],
-      "variance": {},
+      "indexes": [
+        "Paper.paper_id",
+        "Paper.year",
+        "Paper.degree"
+      ],
+      "load": {
+        "nodes_loaded": 27769,
+        "relationships_loaded": 352768,
+        "node_seconds": 2.446,
+        "relationship_seconds": 19.18,
+        "total_seconds": 21.625,
+        "nodes_per_second": 11353.7,
+        "relationships_per_second": 18393.0,
+        "method": "official neo4j driver, UNWIND batching (batch=10000)"
+      },
+      "verification": {
+        "nodes_expected": 27769,
+        "nodes_actual": 27769,
+        "relationships_expected": 352768,
+        "relationships_actual": 352768,
+        "complete": true
+      },
+      "cold_start_ms": {
+        "1-hop": 301.613,
+        "2-hop": 245.966,
+        "3-hop": 367.669,
+        "point-lookup": 239.062,
+        "filtered-lookup": 275.453,
+        "aggregation": 332.259
+      },
+      "baseline_rtt": {
+        "p50": 239.373,
+        "p95": 243.208,
+        "min": 237.085,
+        "iterations": 20
+      },
+      "workloads": {
+        "1-hop": {
+          "workload": "1-hop",
+          "iterations": 100,
+          "p50": 248.0175410019001,
+          "p95": 325.8551670005545,
+          "p99": 755.3419169998961,
+          "mean": 268.2188399901497,
+          "min": 238.1283330032602,
+          "max": 1055.339708000247,
+          "stdev": 97.59824271993718,
+          "errors": 0,
+          "error_samples": []
+        },
+        "2-hop": {
+          "workload": "2-hop",
+          "iterations": 100,
+          "p50": 240.91670900088502,
+          "p95": 304.45029200200224,
+          "p99": 339.4272919977084,
+          "mean": 248.79586513052345,
+          "min": 238.74570800398942,
+          "max": 359.4321670025238,
+          "stdev": 22.86397580595081,
+          "errors": 0,
+          "error_samples": []
+        },
+        "3-hop": {
+          "workload": "3-hop",
+          "iterations": 100,
+          "p50": 263.3706670021638,
+          "p95": 444.1378330011503,
+          "p99": 500.71383300382877,
+          "mean": 286.1613941295218,
+          "min": 238.09191700274823,
+          "max": 541.8512500036741,
+          "stdev": 62.883882172315715,
+          "errors": 0,
+          "error_samples": []
+        },
+        "point-lookup": {
+          "workload": "point-lookup",
+          "iterations": 100,
+          "p50": 247.3640410025837,
+          "p95": 289.46025000186637,
+          "p99": 315.9209580044262,
+          "mean": 249.49985786006437,
+          "min": 237.31100000441074,
+          "max": 328.5948749980889,
+          "stdev": 16.988552532783622,
+          "errors": 0,
+          "error_samples": []
+        },
+        "filtered-lookup": {
+          "workload": "filtered-lookup",
+          "iterations": 100,
+          "p50": 245.63316600688267,
+          "p95": 306.10983299993677,
+          "p99": 926.5784589952091,
+          "mean": 264.23760626996227,
+          "min": 242.23204200097825,
+          "max": 928.158083006565,
+          "stdev": 96.92791250255866,
+          "errors": 0,
+          "error_samples": []
+        },
+        "aggregation": {
+          "workload": "aggregation",
+          "iterations": 100,
+          "p50": 286.8447080036276,
+          "p95": 347.2341660017264,
+          "p99": 525.2312079974217,
+          "mean": 301.2645108300785,
+          "min": 281.6762500006007,
+          "max": 540.692125003261,
+          "stdev": 44.2922897555093,
+          "errors": 0,
+          "error_samples": []
+        }
+      },
+      "workload_results": {
+        "1-hop": 1669,
+        "2-hop": 18013,
+        "3-hop": 95111,
+        "point-lookup": 100,
+        "filtered-lookup": 114100,
+        "aggregation": 1200
+      },
+      "concurrency": [
+        {
+          "clients": 1,
+          "duration_seconds": 20.01,
+          "read_ratio": 0.8,
+          "total_operations": 76,
+          "reads": 63,
+          "writes": 13,
+          "errors": 0,
+          "throughput_qps": 3.8,
+          "p50_ms": 238.87,
+          "p95_ms": 325.18,
+          "p99_ms": 922.73,
+          "error_samples": []
+        },
+        {
+          "clients": 10,
+          "duration_seconds": 20.2,
+          "read_ratio": 0.8,
+          "total_operations": 793,
+          "reads": 636,
+          "writes": 157,
+          "errors": 0,
+          "throughput_qps": 39.3,
+          "p50_ms": 248.15,
+          "p95_ms": 272.85,
+          "p99_ms": 304.71,
+          "error_samples": []
+        },
+        {
+          "clients": 40,
+          "duration_seconds": 20.92,
+          "read_ratio": 0.8,
+          "total_operations": 3198,
+          "reads": 2558,
+          "writes": 640,
+          "errors": 0,
+          "throughput_qps": 152.9,
+          "p50_ms": 247.73,
+          "p95_ms": 274.45,
+          "p99_ms": 306.69,
+          "error_samples": []
+        }
+      ],
+      "variance": {
+        "1-hop": {
+          "runs": 3,
+          "p50_values": [
+            248.018,
+            247.606,
+            240.172
+          ],
+          "p50_mean": 245.265,
+          "p50_spread": 7.845,
+          "p50_spread_pct": 3.2
+        },
+        "2-hop": {
+          "runs": 3,
+          "p50_values": [
+            240.917,
+            240.503,
+            240.875
+          ],
+          "p50_mean": 240.765,
+          "p50_spread": 0.414,
+          "p50_spread_pct": 0.2
+        },
+        "3-hop": {
+          "runs": 3,
+          "p50_values": [
+            263.371,
+            269.239,
+            266.658
+          ],
+          "p50_mean": 266.423,
+          "p50_spread": 5.869,
+          "p50_spread_pct": 2.2
+        },
+        "point-lookup": {
+          "runs": 3,
+          "p50_values": [
+            247.364,
+            241.001,
+            239.453
+          ],
+          "p50_mean": 242.606,
+          "p50_spread": 7.911,
+          "p50_spread_pct": 3.3
+        },
+        "filtered-lookup": {
+          "runs": 3,
+          "p50_values": [
+            245.633,
+            245.69,
+            246.025
+          ],
+          "p50_mean": 245.783,
+          "p50_spread": 0.392,
+          "p50_spread_pct": 0.2
+        },
+        "aggregation": {
+          "runs": 3,
+          "p50_values": [
+            286.845,
+            292.632,
+            290.713
+          ],
+          "p50_mean": 290.063,
+          "p50_spread": 5.788,
+          "p50_spread_pct": 2.0
+        }
+      },
       "errors": [],
-      "skipped": "not configured (missing: uri, password)"
+      "skipped": null
     },
     {
       "id": "neo4j",
@@ -160,11 +397,11 @@
       "load": {
         "nodes_loaded": 27769,
         "relationships_loaded": 352768,
-        "node_seconds": 50.057,
-        "relationship_seconds": 140.096,
-        "total_seconds": 190.153,
-        "nodes_per_second": 554.7,
-        "relationships_per_second": 2518.0,
+        "node_seconds": 17.411,
+        "relationship_seconds": 61.29,
+        "total_seconds": 78.701,
+        "nodes_per_second": 1594.9,
+        "relationships_per_second": 5755.7,
         "method": "official neo4j driver, UNWIND batching (batch=10000)"
       },
       "verification": {
@@ -175,89 +412,95 @@
         "complete": true
       },
       "cold_start_ms": {
-        "1-hop": 2044.578,
-        "2-hop": 1934.469,
-        "3-hop": 2002.129,
-        "point-lookup": 608.443,
-        "filtered-lookup": 1695.926,
-        "aggregation": 806.676
+        "1-hop": 637.2,
+        "2-hop": 914.607,
+        "3-hop": 1315.213,
+        "point-lookup": 73.701,
+        "filtered-lookup": 1002.171,
+        "aggregation": 311.841
+      },
+      "baseline_rtt": {
+        "p50": 3.378,
+        "p95": 83.368,
+        "min": 2.754,
+        "iterations": 20
       },
       "workloads": {
         "1-hop": {
           "workload": "1-hop",
           "iterations": 100,
-          "p50": 5.059791998064611,
-          "p95": 70.81216599908657,
-          "p99": 81.80954199633561,
-          "mean": 15.02773702981358,
-          "min": 2.656666998518631,
-          "max": 92.62104200024623,
-          "stdev": 23.467727480192988,
+          "p50": 4.073709002113901,
+          "p95": 89.742957999988,
+          "p99": 104.12075000203913,
+          "mean": 21.124915040272754,
+          "min": 2.2620000017923303,
+          "max": 125.19608400180005,
+          "stdev": 33.04534735338741,
           "errors": 0,
           "error_samples": []
         },
         "2-hop": {
           "workload": "2-hop",
           "iterations": 100,
-          "p50": 4.550292003841605,
-          "p95": 65.71795800118707,
-          "p99": 72.58883300528396,
-          "mean": 12.950982510010363,
-          "min": 2.355208998778835,
-          "max": 99.88291599438526,
-          "stdev": 21.23648869296514,
+          "p50": 3.1135000026552007,
+          "p95": 65.81358300172724,
+          "p99": 75.71008299419191,
+          "mean": 8.891537949675694,
+          "min": 1.7672920002951287,
+          "max": 77.04416700289585,
+          "stdev": 18.188104654091656,
           "errors": 0,
           "error_samples": []
         },
         "3-hop": {
           "workload": "3-hop",
           "iterations": 100,
-          "p50": 6.820292001066264,
-          "p95": 96.89174999948591,
-          "p99": 119.28204199648462,
-          "mean": 30.780245020214352,
-          "min": 2.2593329995288514,
-          "max": 205.49250000476604,
-          "stdev": 40.5447642005175,
+          "p50": 4.655208002077416,
+          "p95": 89.05724999931408,
+          "p99": 112.79370899865171,
+          "mean": 20.0643387602031,
+          "min": 1.5952079993439838,
+          "max": 180.47887499415083,
+          "stdev": 33.56547466388899,
           "errors": 0,
           "error_samples": []
         },
         "point-lookup": {
           "workload": "point-lookup",
           "iterations": 100,
-          "p50": 3.334792003442999,
-          "p95": 72.52212500316091,
-          "p99": 83.5037500000908,
-          "mean": 10.978643710186589,
-          "min": 1.6207500011660159,
-          "max": 90.8226250030566,
-          "stdev": 21.713093427908426,
+          "p50": 2.4437920001219027,
+          "p95": 45.733415994618554,
+          "p99": 65.6076250015758,
+          "mean": 6.1362687397922855,
+          "min": 1.5136250003706664,
+          "max": 69.671457997174,
+          "stdev": 13.519576455507663,
           "errors": 0,
           "error_samples": []
         },
         "filtered-lookup": {
           "workload": "filtered-lookup",
           "iterations": 100,
-          "p50": 6.862374997581355,
-          "p95": 85.5235420021927,
-          "p99": 104.46520799450809,
-          "mean": 22.004979539997294,
-          "min": 3.8637090037809685,
-          "max": 228.58204099611612,
-          "stdev": 34.668052932400705,
+          "p50": 5.349833001673687,
+          "p95": 82.63929199893028,
+          "p99": 94.19383300701156,
+          "mean": 18.95261586032575,
+          "min": 2.505625001504086,
+          "max": 95.82362500077579,
+          "stdev": 28.391240061439742,
           "errors": 0,
           "error_samples": []
         },
         "aggregation": {
           "workload": "aggregation",
           "iterations": 100,
-          "p50": 11.022207996575162,
-          "p95": 96.7529170011403,
-          "p99": 180.3650000001653,
-          "mean": 33.97931375038752,
-          "min": 6.58929199562408,
-          "max": 193.34604200412286,
-          "stdev": 38.596873217448575,
+          "p50": 9.989374993892852,
+          "p95": 97.75295799772721,
+          "p99": 107.74579199642176,
+          "mean": 29.838266289661988,
+          "min": 6.389499998476822,
+          "max": 108.04875000030734,
+          "stdev": 33.736247296081906,
           "errors": 0,
           "error_samples": []
         }
@@ -275,46 +518,46 @@
           "clients": 1,
           "duration_seconds": 20.0,
           "read_ratio": 0.8,
-          "total_operations": 2310,
-          "reads": 1865,
-          "writes": 445,
+          "total_operations": 4314,
+          "reads": 3455,
+          "writes": 859,
           "errors": 0,
-          "throughput_qps": 115.5,
-          "p50_ms": 2.56,
-          "p95_ms": 57.0,
-          "p99_ms": 82.66,
+          "throughput_qps": 215.7,
+          "p50_ms": 1.45,
+          "p95_ms": 7.99,
+          "p99_ms": 72.74,
           "error_samples": []
         },
         {
           "clients": 10,
-          "duration_seconds": 20.02,
+          "duration_seconds": 20.01,
           "read_ratio": 0.8,
-          "total_operations": 1584,
-          "reads": 1273,
-          "writes": 311,
+          "total_operations": 3688,
+          "reads": 2975,
+          "writes": 713,
           "errors": 0,
-          "throughput_qps": 79.1,
-          "p50_ms": 97.53,
-          "p95_ms": 341.65,
-          "p99_ms": 896.34,
+          "throughput_qps": 184.3,
+          "p50_ms": 10.49,
+          "p95_ms": 105.81,
+          "p99_ms": 285.4,
           "error_samples": []
         },
         {
           "clients": 40,
-          "duration_seconds": 20.8,
+          "duration_seconds": 20.19,
           "read_ratio": 0.8,
-          "total_operations": 3097,
-          "reads": 2477,
-          "writes": 620,
+          "total_operations": 5631,
+          "reads": 4503,
+          "writes": 1128,
           "errors": 7,
-          "throughput_qps": 148.9,
-          "p50_ms": 194.67,
-          "p95_ms": 502.04,
-          "p99_ms": 789.83,
+          "throughput_qps": 279.0,
+          "p50_ms": 98.33,
+          "p95_ms": 283.55,
+          "p99_ms": 578.74,
           "error_samples": [
-            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 68.0 MiB. dbms.memory.transaction.total.max threshold reached}",
-            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 74.0 MiB. dbms.memory.transaction.total.max threshold reached}",
-            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 70.0 MiB. dbms.memory.transaction.total.max threshold reached}"
+            "connect: TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 66.0 MiB. dbms.memory.transaction.total.max threshold reached}",
+            "connect: TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 66.0 MiB. dbms.memory.transaction.total.max threshold reached}",
+            "connect: TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 66.0 MiB. dbms.memory.transaction.total.max threshold reached}"
           ]
         }
       ],
@@ -322,68 +565,68 @@
         "1-hop": {
           "runs": 3,
           "p50_values": [
-            5.06,
-            3.645,
-            2.873
+            4.074,
+            1.916,
+            1.699
           ],
-          "p50_mean": 3.859,
-          "p50_spread": 2.187,
-          "p50_spread_pct": 56.7
+          "p50_mean": 2.563,
+          "p50_spread": 2.375,
+          "p50_spread_pct": 92.7
         },
         "2-hop": {
           "runs": 3,
           "p50_values": [
-            4.55,
-            2.867,
-            3.729
+            3.114,
+            2.361,
+            1.793
           ],
-          "p50_mean": 3.715,
-          "p50_spread": 1.684,
-          "p50_spread_pct": 45.3
+          "p50_mean": 2.423,
+          "p50_spread": 1.32,
+          "p50_spread_pct": 54.5
         },
         "3-hop": {
           "runs": 3,
           "p50_values": [
-            6.82,
-            6.0,
-            6.089
+            4.655,
+            3.689,
+            3.042
           ],
-          "p50_mean": 6.303,
-          "p50_spread": 0.82,
-          "p50_spread_pct": 13.0
+          "p50_mean": 3.796,
+          "p50_spread": 1.613,
+          "p50_spread_pct": 42.5
         },
         "point-lookup": {
           "runs": 3,
           "p50_values": [
-            3.335,
-            2.913,
-            1.985
+            2.444,
+            1.771,
+            1.539
           ],
-          "p50_mean": 2.744,
-          "p50_spread": 1.35,
-          "p50_spread_pct": 49.2
+          "p50_mean": 1.918,
+          "p50_spread": 0.905,
+          "p50_spread_pct": 47.2
         },
         "filtered-lookup": {
           "runs": 3,
           "p50_values": [
-            6.862,
-            6.019,
-            6.214
+            5.35,
+            4.173,
+            3.755
           ],
-          "p50_mean": 6.365,
-          "p50_spread": 0.843,
-          "p50_spread_pct": 13.3
+          "p50_mean": 4.426,
+          "p50_spread": 1.595,
+          "p50_spread_pct": 36.0
         },
         "aggregation": {
           "runs": 3,
           "p50_values": [
-            11.022,
-            18.717,
-            8.489
+            9.989,
+            8.516,
+            9.85
           ],
-          "p50_mean": 12.743,
-          "p50_spread": 10.228,
-          "p50_spread_pct": 80.3
+          "p50_mean": 9.452,
+          "p50_spread": 1.473,
+          "p50_spread_pct": 15.6
         }
       },
       "errors": [],
@@ -401,8 +644,8 @@
         "region": "local",
         "notes": "In-memory engine. The 256 MB cap is a harder constraint here than for disk-backed engines, since the working set cannot spill.",
         "observable": {
-          "memory_res": "184.53MiB",
-          "disk_usage": "24.99MiB",
+          "memory_res": "184.95MiB",
+          "disk_usage": "25.88MiB",
           "vertex_count": 27769,
           "edge_count": 352768
         }
@@ -415,11 +658,11 @@
       "load": {
         "nodes_loaded": 27769,
         "relationships_loaded": 352768,
-        "node_seconds": 4.48,
-        "relationship_seconds": 10.105,
-        "total_seconds": 14.585,
-        "nodes_per_second": 6199.0,
-        "relationships_per_second": 34908.6,
+        "node_seconds": 0.927,
+        "relationship_seconds": 8.134,
+        "total_seconds": 9.061,
+        "nodes_per_second": 29970.7,
+        "relationships_per_second": 43367.5,
         "method": "official neo4j driver, UNWIND batching (batch=10000)"
       },
       "verification": {
@@ -430,89 +673,95 @@
         "complete": true
       },
       "cold_start_ms": {
-        "1-hop": 13.778,
-        "2-hop": 5.68,
-        "3-hop": 13.928,
-        "point-lookup": 1.289,
-        "filtered-lookup": 4.273,
-        "aggregation": 11.512
+        "1-hop": 6.584,
+        "2-hop": 2.174,
+        "3-hop": 7.389,
+        "point-lookup": 1.495,
+        "filtered-lookup": 4.68,
+        "aggregation": 6.922
+      },
+      "baseline_rtt": {
+        "p50": 0.669,
+        "p95": 2.727,
+        "min": 0.541,
+        "iterations": 20
       },
       "workloads": {
         "1-hop": {
           "workload": "1-hop",
           "iterations": 100,
-          "p50": 0.8819580034469254,
-          "p95": 3.044208002393134,
-          "p99": 11.581291000766214,
-          "mean": 1.4480787298816722,
-          "min": 0.4126249987166375,
-          "max": 26.381499999843072,
-          "stdev": 2.8138556443291485,
+          "p50": 0.42341699736425653,
+          "p95": 0.9939159936038777,
+          "p99": 1.2493340036598966,
+          "mean": 0.48991411975293886,
+          "min": 0.30883300496498123,
+          "max": 1.273540998226963,
+          "stdev": 0.21372366847766008,
           "errors": 0,
           "error_samples": []
         },
         "2-hop": {
           "workload": "2-hop",
           "iterations": 100,
-          "p50": 0.5701249974663369,
-          "p95": 1.2992089978069998,
-          "p99": 2.2080830021877773,
-          "mean": 0.6827220699051395,
-          "min": 0.33554200490470976,
-          "max": 2.5323340014438145,
-          "stdev": 0.3696095621374512,
+          "p50": 0.4372080002212897,
+          "p95": 0.7182499975897372,
+          "p99": 1.0897079991991632,
+          "mean": 0.6069869899511104,
+          "min": 0.33083299786085263,
+          "max": 14.269292005337775,
+          "stdev": 1.3860506640561747,
           "errors": 0,
           "error_samples": []
         },
         "3-hop": {
           "workload": "3-hop",
           "iterations": 100,
-          "p50": 1.4388330018846318,
-          "p95": 7.300416997168213,
-          "p99": 35.09170900360914,
-          "mean": 2.9843567100033397,
-          "min": 0.44358299783198163,
-          "max": 45.72179200476967,
-          "stdev": 5.952790865291863,
+          "p50": 1.1098749964730814,
+          "p95": 4.576625004119705,
+          "p99": 26.178291001997422,
+          "mean": 1.9239953999203863,
+          "min": 0.3656659973785281,
+          "max": 33.21049999794923,
+          "stdev": 4.191009321548827,
           "errors": 0,
           "error_samples": []
         },
         "point-lookup": {
           "workload": "point-lookup",
           "iterations": 100,
-          "p50": 0.5763329972978681,
-          "p95": 1.207916000566911,
-          "p99": 1.9753750020754524,
-          "mean": 0.8846862298378255,
-          "min": 0.3308750019641593,
-          "max": 24.065042001893744,
-          "stdev": 2.35999242875797,
+          "p50": 0.3697080028359778,
+          "p95": 0.5653749976772815,
+          "p99": 0.6115840005804785,
+          "mean": 0.39019875999656506,
+          "min": 0.3218749989173375,
+          "max": 0.8602919988334179,
+          "stdev": 0.0715311187042358,
           "errors": 0,
           "error_samples": []
         },
         "filtered-lookup": {
           "workload": "filtered-lookup",
           "iterations": 100,
-          "p50": 1.1061249970225617,
-          "p95": 4.281374996935483,
-          "p99": 11.305958003504202,
-          "mean": 1.7147749897412723,
-          "min": 0.7839169993530959,
-          "max": 13.31141699483851,
-          "stdev": 1.8492834557708735,
+          "p50": 0.8095000011962838,
+          "p95": 0.9826250025071204,
+          "p99": 1.0682080028345808,
+          "mean": 0.8323270401160698,
+          "min": 0.7675000015296973,
+          "max": 1.5944999977364205,
+          "stdev": 0.09501839858822035,
           "errors": 0,
           "error_samples": []
         },
         "aggregation": {
           "workload": "aggregation",
           "iterations": 100,
-          "p50": 7.8981249971548095,
-          "p95": 74.40066699928138,
-          "p99": 99.34812499705004,
-          "mean": 18.034180740069132,
-          "min": 5.08224999794038,
-          "max": 107.81704200053355,
-          "stdev": 22.67454766886265,
+          "p50": 6.304124995949678,
+          "p95": 36.6199170020991,
+          "p99": 41.32949999620905,
+          "mean": 9.14291458982916,
+          "min": 4.265083000063896,
+          "max": 42.45875000196975,
+          "stdev": 9.331814535762694,
           "errors": 0,
           "error_samples": []
         }
@@ -528,48 +777,45 @@
       "concurrency": [
         {
           "clients": 1,
-          "duration_seconds": 20.0,
+          "duration_seconds": 20.02,
           "read_ratio": 0.8,
-          "total_operations": 17646,
-          "reads": 14142,
-          "writes": 3504,
+          "total_operations": 45504,
+          "reads": 36378,
+          "writes": 9126,
           "errors": 0,
-          "throughput_qps": 882.1,
-          "p50_ms": 0.68,
-          "p95_ms": 2.57,
-          "p99_ms": 7.28,
+          "throughput_qps": 2273.3,
+          "p50_ms": 0.34,
+          "p95_ms": 0.91,
+          "p99_ms": 2.04,
           "error_samples": []
         },
         {
           "clients": 10,
           "duration_seconds": 20.0,
           "read_ratio": 0.8,
-          "total_operations": 30545,
-          "reads": 24631,
-          "writes": 5914,
-          "errors": 1,
-          "throughput_qps": 1526.9,
-          "p50_ms": 2.79,
-          "p95_ms": 44.53,
-          "p99_ms": 63.18,
-          "error_samples": [
-            "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}"
-          ]
+          "total_operations": 27728,
+          "reads": 22407,
+          "writes": 5321,
+          "errors": 0,
+          "throughput_qps": 1386.1,
+          "p50_ms": 3.43,
+          "p95_ms": 47.17,
+          "p99_ms": 60.41,
+          "error_samples": []
         },
         {
           "clients": 40,
           "duration_seconds": 20.01,
           "read_ratio": 0.8,
-          "total_operations": 28137,
-          "reads": 22576,
-          "writes": 5561,
-          "errors": 2,
-          "throughput_qps": 1406.1,
-          "p50_ms": 13.13,
-          "p95_ms": 85.75,
-          "p99_ms": 169.44,
+          "total_operations": 30962,
+          "reads": 24868,
+          "writes": 6094,
+          "errors": 1,
+          "throughput_qps": 1547.4,
+          "p50_ms": 18.26,
+          "p95_ms": 67.8,
+          "p99_ms": 86.59,
           "error_samples": [
-            "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}",
             "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}"
           ]
         }
@@ -578,68 +824,68 @@
         "1-hop": {
           "runs": 3,
           "p50_values": [
-            0.882,
-            0.902,
-            1.129
+            0.423,
+            0.709,
+            0.798
           ],
-          "p50_mean": 0.971,
-          "p50_spread": 0.247,
-          "p50_spread_pct": 25.4
+          "p50_mean": 0.643,
+          "p50_spread": 0.375,
+          "p50_spread_pct": 58.2
         },
         "2-hop": {
           "runs": 3,
           "p50_values": [
-            0.57,
-            0.749,
-            1.086
+            0.437,
+            0.986,
+            0.797
           ],
-          "p50_mean": 0.802,
-          "p50_spread": 0.516,
-          "p50_spread_pct": 64.4
+          "p50_mean": 0.74,
+          "p50_spread": 0.549,
+          "p50_spread_pct": 74.2
         },
         "3-hop": {
           "runs": 3,
           "p50_values": [
-            1.439,
-            1.553,
-            1.862
+            1.11,
+            1.692,
+            1.63
           ],
-          "p50_mean": 1.618,
-          "p50_spread": 0.423,
-          "p50_spread_pct": 26.1
+          "p50_mean": 1.477,
+          "p50_spread": 0.582,
+          "p50_spread_pct": 39.4
         },
         "point-lookup": {
           "runs": 3,
           "p50_values": [
-            0.576,
-            0.505,
-            0.533
+            0.37,
+            0.656,
+            0.806
           ],
-          "p50_mean": 0.538,
-          "p50_spread": 0.071,
-          "p50_spread_pct": 13.2
+          "p50_mean": 0.61,
+          "p50_spread": 0.436,
+          "p50_spread_pct": 71.5
         },
         "filtered-lookup": {
           "runs": 3,
           "p50_values": [
-            1.106,
-            0.928,
-            1.041
+            0.81,
+            1.27,
+            1.466
           ],
-          "p50_mean": 1.025,
-          "p50_spread": 0.178,
-          "p50_spread_pct": 17.4
+          "p50_mean": 1.182,
+          "p50_spread": 0.656,
+          "p50_spread_pct": 55.5
         },
         "aggregation": {
           "runs": 3,
           "p50_values": [
-            7.898,
-            6.459,
-            6.434
+            6.304,
+            6.553,
+            6.399
           ],
-          "p50_mean": 6.93,
-          "p50_spread": 1.464,
-          "p50_spread_pct": 21.1
+          "p50_mean": 6.419,
+          "p50_spread": 0.249,
+          "p50_spread_pct": 3.9
         }
       },
       "errors": [],
@@ -658,11 +904,11 @@
         "notes": "Multi-model engine queried with AQL rather than Cypher. Observed sitting at the memory ceiling at idle, so its results carry the most memory-pressure risk of the set.",
         "observable": {
           "papers_documents": 27769,
-          "papers_documents_bytes": 2308774,
+          "papers_documents_bytes": 2325026,
           "cites_documents": 352768,
-          "cites_documents_bytes": 31364366,
-          "index_bytes": 39603478,
-          "total_stored_bytes": 73276618
+          "cites_documents_bytes": 30063316,
+          "index_bytes": 39670027,
+          "total_stored_bytes": 72058369
         }
       },
       "indexes": [
@@ -673,11 +919,11 @@
       "load": {
         "nodes_loaded": 27769,
         "relationships_loaded": 352768,
-        "node_seconds": 1.906,
-        "relationship_seconds": 14.627,
-        "total_seconds": 16.532,
-        "nodes_per_second": 14572.6,
-        "relationships_per_second": 24118.3,
+        "node_seconds": 1.604,
+        "relationship_seconds": 16.584,
+        "total_seconds": 18.188,
+        "nodes_per_second": 17311.4,
+        "relationships_per_second": 21271.1,
         "method": "python-arango insert_many batching (batch=10000)"
       },
       "verification": {
@@ -688,89 +934,95 @@
         "complete": true
       },
       "cold_start_ms": {
-        "1-hop": 16.608,
-        "2-hop": 8.549,
-        "3-hop": 156.053,
-        "point-lookup": 5.099,
-        "filtered-lookup": 6.492,
-        "aggregation": 14.756
+        "1-hop": 16.883,
+        "2-hop": 32.758,
+        "3-hop": 111.923,
+        "point-lookup": 3.899,
+        "filtered-lookup": 6.36,
+        "aggregation": 14.914
+      },
+      "baseline_rtt": {
+        "p50": 2.523,
+        "p95": 3.063,
+        "min": 2.011,
+        "iterations": 20
       },
       "workloads": {
         "1-hop": {
           "workload": "1-hop",
           "iterations": 100,
-          "p50": 2.795833002892323,
-          "p95": 5.885874998057261,
-          "p99": 8.351124997716397,
-          "mean": 3.3093615993857384,
-          "min": 1.730457996018231,
-          "max": 8.447833999525756,
-          "stdev": 1.3094688506166252,
+          "p50": 4.992874994059093,
+          "p95": 66.40829199750442,
+          "p99": 96.47845799918287,
+          "mean": 12.38631461004843,
+          "min": 2.7426250017015263,
+          "max": 104.48987500421936,
+          "stdev": 21.0553321588158,
           "errors": 0,
           "error_samples": []
         },
         "2-hop": {
           "workload": "2-hop",
           "iterations": 100,
-          "p50": 4.5088330007274635,
-          "p95": 69.61845800105948,
-          "p99": 83.51266699901316,
-          "mean": 9.684452069705003,
-          "min": 1.9982500016340055,
-          "max": 100.27429200272309,
-          "stdev": 18.455707856473268,
+          "p50": 4.821708003873937,
+          "p95": 77.78624999627937,
+          "p99": 88.73733299697051,
+          "mean": 12.854289659808273,
+          "min": 1.3887500026612543,
+          "max": 94.88675000466174,
+          "stdev": 22.032172924140713,
           "errors": 0,
           "error_samples": []
         },
         "3-hop": {
           "workload": "3-hop",
           "iterations": 100,
-          "p50": 66.44795800093561,
-          "p95": 383.2967499984079,
-          "p99": 488.720707995526,
-          "mean": 101.16759505042864,
-          "min": 1.84116700256709,
-          "max": 672.7765000032377,
-          "stdev": 128.65422847358406,
+          "p50": 20.957415996235795,
+          "p95": 200.0400830002036,
+          "p99": 304.1417089989409,
+          "mean": 54.19065879024856,
+          "min": 2.9779999968013726,
+          "max": 340.50679199572187,
+          "stdev": 67.96918920178912,
           "errors": 0,
           "error_samples": []
         },
         "point-lookup": {
           "workload": "point-lookup",
           "iterations": 100,
-          "p50": 2.653833005751949,
-          "p95": 5.062333002570085,
-          "p99": 9.121166993281804,
-          "mean": 2.978721649997169,
-          "min": 1.6955829996732064,
-          "max": 10.391374999016989,
-          "stdev": 1.3086925141155048,
+          "p50": 3.391500002180692,
+          "p95": 4.749416999402456,
+          "p99": 5.301750003127381,
+          "mean": 3.5388466798031004,
+          "min": 2.0257500000298023,
+          "max": 11.2386670007254,
+          "stdev": 1.0261092468135065,
           "errors": 0,
           "error_samples": []
         },
         "filtered-lookup": {
           "workload": "filtered-lookup",
           "iterations": 100,
-          "p50": 6.872707999718841,
-          "p95": 22.509665999677964,
-          "p99": 37.96604200033471,
-          "mean": 9.090712489996804,
-          "min": 5.460458000015933,
-          "max": 47.423125004570466,
-          "stdev": 6.708908923282725,
+          "p50": 7.473458994354587,
+          "p95": 27.59633400273742,
+          "p99": 36.4267499971902,
+          "mean": 9.436420899874065,
+          "min": 6.26787500368664,
+          "max": 47.059832999366336,
+          "stdev": 6.790813232423034,
           "errors": 0,
           "error_samples": []
         },
         "aggregation": {
           "workload": "aggregation",
           "iterations": 100,
-          "p50": 8.929957999498583,
-          "p95": 36.58516699942993,
-          "p99": 40.657083998667076,
-          "mean": 12.713610830178368,
-          "min": 7.222332998935599,
-          "max": 55.79083400516538,
-          "stdev": 9.657392913769405,
+          "p50": 9.282792001613416,
+          "p95": 37.00908300379524,
+          "p99": 44.21070900571067,
+          "mean": 12.825891640095506,
+          "min": 7.135833999200258,
+          "max": 47.35087500012014,
+          "stdev": 9.54904416393915,
           "errors": 0,
           "error_samples": []
         }
@@ -788,42 +1040,42 @@
           "clients": 1,
           "duration_seconds": 20.0,
           "read_ratio": 0.8,
-          "total_operations": 6171,
-          "reads": 4957,
-          "writes": 1214,
+          "total_operations": 5194,
+          "reads": 4150,
+          "writes": 1044,
           "errors": 0,
-          "throughput_qps": 308.5,
-          "p50_ms": 3.06,
-          "p95_ms": 5.48,
-          "p99_ms": 8.38,
+          "throughput_qps": 259.7,
+          "p50_ms": 3.82,
+          "p95_ms": 5.2,
+          "p99_ms": 6.28,
           "error_samples": []
         },
         {
           "clients": 10,
-          "duration_seconds": 20.0,
+          "duration_seconds": 20.01,
           "read_ratio": 0.8,
-          "total_operations": 28649,
-          "reads": 23143,
-          "writes": 5506,
+          "total_operations": 16533,
+          "reads": 13367,
+          "writes": 3166,
           "errors": 0,
-          "throughput_qps": 1432.1,
-          "p50_ms": 5.08,
-          "p95_ms": 22.74,
-          "p99_ms": 40.49,
+          "throughput_qps": 826.3,
+          "p50_ms": 8.98,
+          "p95_ms": 37.99,
+          "p99_ms": 46.6,
           "error_samples": []
         },
         {
           "clients": 40,
           "duration_seconds": 20.02,
           "read_ratio": 0.8,
-          "total_operations": 27186,
-          "reads": 21809,
-          "writes": 5377,
+          "total_operations": 19421,
+          "reads": 15588,
+          "writes": 3833,
           "errors": 0,
-          "throughput_qps": 1357.9,
-          "p50_ms": 23.47,
-          "p95_ms": 65.14,
-          "p99_ms": 97.1,
+          "throughput_qps": 970.1,
+          "p50_ms": 39.07,
+          "p95_ms": 70.43,
+          "p99_ms": 87.82,
           "error_samples": []
         }
       ],
@@ -831,68 +1083,68 @@
         "1-hop": {
           "runs": 3,
           "p50_values": [
-            2.796,
-            3.311,
-            2.536
+            4.993,
+            3.834,
+            3.134
           ],
-          "p50_mean": 2.881,
-          "p50_spread": 0.775,
-          "p50_spread_pct": 26.9
+          "p50_mean": 3.987,
+          "p50_spread": 1.858,
+          "p50_spread_pct": 46.6
         },
         "2-hop": {
           "runs": 3,
           "p50_values": [
-            4.509,
-            4.71,
-            3.893
+            4.822,
+            4.787,
+            4.209
           ],
-          "p50_mean": 4.371,
-          "p50_spread": 0.817,
-          "p50_spread_pct": 18.7
+          "p50_mean": 4.606,
+          "p50_spread": 0.613,
+          "p50_spread_pct": 13.3
         },
         "3-hop": {
           "runs": 3,
           "p50_values": [
-            66.448,
-            17.433,
-            17.631
+            20.957,
+            20.167,
+            18.765
           ],
-          "p50_mean": 33.837,
-          "p50_spread": 49.015,
-          "p50_spread_pct": 144.9
+          "p50_mean": 19.963,
+          "p50_spread": 2.193,
+          "p50_spread_pct": 11.0
         },
         "point-lookup": {
           "runs": 3,
           "p50_values": [
-            2.654,
-            2.271,
-            1.963
+            3.392,
+            2.998,
+            2.733
           ],
-          "p50_mean": 2.296,
-          "p50_spread": 0.69,
-          "p50_spread_pct": 30.1
+          "p50_mean": 3.041,
+          "p50_spread": 0.659,
+          "p50_spread_pct": 21.7
         },
         "filtered-lookup": {
           "runs": 3,
           "p50_values": [
-            6.873,
-            6.788,
-            6.016
+            7.473,
+            7.274,
+            7.117
           ],
-          "p50_mean": 6.559,
-          "p50_spread": 0.857,
-          "p50_spread_pct": 13.1
+          "p50_mean": 7.288,
+          "p50_spread": 0.357,
+          "p50_spread_pct": 4.9
         },
         "aggregation": {
           "runs": 3,
           "p50_values": [
-            8.93,
-            8.637,
-            8.328
+            9.283,
+            9.103,
+            8.963
           ],
-          "p50_mean": 8.632,
-          "p50_spread": 0.601,
-          "p50_spread_pct": 7.0
+          "p50_mean": 9.116,
+          "p50_spread": 0.32,
+          "p50_spread_pct": 3.5
         }
       },
       "errors": [],
@@ -910,9 +1162,9 @@
         "region": "local",
         "notes": "Sparse-matrix / GraphBLAS engine inside Redis. Speaks Cypher, so queries stay comparable while the storage engine differs completely.",
         "observable": {
-          "used_memory_bytes": 32524528,
-          "used_memory_human": "31.02M",
-          "used_memory_peak_bytes": 79801344
+          "used_memory_bytes": 32718992,
+          "used_memory_human": "31.20M",
+          "used_memory_peak_bytes": 79570568
         }
       },
       "indexes": [
@@ -923,11 +1175,11 @@
       "load": {
         "nodes_loaded": 27769,
         "relationships_loaded": 352768,
-        "node_seconds": 2.181,
-        "relationship_seconds": 12.199,
-        "total_seconds": 14.38,
-        "nodes_per_second": 12733.6,
-        "relationships_per_second": 28916.9,
+        "node_seconds": 1.945,
+        "relationship_seconds": 12.436,
+        "total_seconds": 14.381,
+        "nodes_per_second": 14275.7,
+        "relationships_per_second": 28367.1,
         "method": "falkordb client, UNWIND batching (batch=10000)"
       },
       "verification": {
@@ -938,89 +1190,95 @@
         "complete": true
       },
       "cold_start_ms": {
-        "1-hop": 376.949,
-        "2-hop": 2.511,
-        "3-hop": 3.016,
-        "point-lookup": 2.968,
-        "filtered-lookup": 17.336,
-        "aggregation": 5.91
+        "1-hop": 458.732,
+        "2-hop": 2.88,
+        "3-hop": 3.237,
+        "point-lookup": 1.851,
+        "filtered-lookup": 8.869,
+        "aggregation": 5.08
+      },
+      "baseline_rtt": {
+        "p50": 0.783,
+        "p95": 1.158,
+        "min": 0.387,
+        "iterations": 20
       },
       "workloads": {
         "1-hop": {
           "workload": "1-hop",
           "iterations": 100,
-          "p50": 0.6092909970902838,
-          "p95": 2.4595840004622005,
-          "p99": 2.89912500011269,
-          "mean": 0.8704983397183241,
-          "min": 0.3067500001634471,
-          "max": 3.074541993555613,
-          "stdev": 0.6603799060327146,
+          "p50": 1.1317500029690564,
+          "p95": 2.1037500046077184,
+          "p99": 2.882792003219947,
+          "mean": 1.530645000457298,
+          "min": 0.4197919988655485,
+          "max": 28.482124995207414,
+          "stdev": 2.766233600374773,
           "errors": 0,
           "error_samples": []
         },
         "2-hop": {
           "workload": "2-hop",
           "iterations": 100,
-          "p50": 0.4656250021071173,
-          "p95": 1.7988339968724176,
-          "p99": 9.047624997037929,
-          "mean": 0.8055829301883932,
-          "min": 0.29675000405404717,
-          "max": 9.081292002520058,
-          "stdev": 1.4144553590845466,
+          "p50": 0.9167910029646009,
+          "p95": 1.5440830029547215,
+          "p99": 1.6560000003664754,
+          "mean": 0.9415145803359337,
+          "min": 0.49116700392914936,
+          "max": 1.6768340065027587,
+          "stdev": 0.28707390065085736,
           "errors": 0,
           "error_samples": []
         },
         "3-hop": {
           "workload": "3-hop",
           "iterations": 100,
-          "p50": 0.931167000089772,
-          "p95": 3.5184579974156804,
-          "p99": 36.42858300008811,
-          "mean": 2.084383809560677,
-          "min": 0.35112499608658254,
-          "max": 50.70137500297278,
-          "stdev": 6.147223031841251,
+          "p50": 1.4559170012944378,
+          "p95": 3.5070000012638047,
+          "p99": 19.46624999982305,
+          "mean": 2.032040060585132,
+          "min": 0.5505840017576702,
+          "max": 22.77483299985761,
+          "stdev": 2.8836682061276004,
           "errors": 0,
           "error_samples": []
         },
         "point-lookup": {
           "workload": "point-lookup",
           "iterations": 100,
-          "p50": 1.6655829967930913,
-          "p95": 6.759375006367918,
-          "p99": 11.396375004551373,
-          "mean": 2.5759607799409423,
-          "min": 0.3824579980573617,
-          "max": 30.521291999320965,
-          "stdev": 3.5076170619442535,
+          "p50": 0.931125003262423,
+          "p95": 2.5619580046623014,
+          "p99": 2.8042080011800863,
+          "mean": 1.1581483000918524,
+          "min": 0.436084003013093,
+          "max": 4.450625005119946,
+          "stdev": 0.6281833622869689,
           "errors": 0,
           "error_samples": []
         },
         "filtered-lookup": {
           "workload": "filtered-lookup",
           "iterations": 100,
-          "p50": 1.195874996483326,
-          "p95": 7.2212499944726005,
-          "p99": 14.588582998840138,
-          "mean": 2.224863710216596,
-          "min": 0.570875003177207,
-          "max": 15.499624998483341,
-          "stdev": 2.814514399844236,
+          "p50": 0.9807919996092096,
+          "p95": 1.5280840016203001,
+          "p99": 2.0109580000280403,
+          "mean": 1.086317559966119,
+          "min": 0.8034580023377202,
+          "max": 2.4877500036382116,
+          "stdev": 0.2649475465636213,
           "errors": 0,
           "error_samples": []
         },
         "aggregation": {
           "workload": "aggregation",
           "iterations": 100,
-          "p50": 3.863291996822227,
-          "p95": 34.379791002720594,
-          "p99": 48.090791002323385,
-          "mean": 7.561124160056352,
-          "min": 3.107707998424303,
-          "max": 126.99733299814397,
-          "stdev": 14.561053618640944,
+          "p50": 4.923125001369044,
+          "p95": 39.70854200451868,
+          "p99": 44.00812499807216,
+          "mean": 7.67486289019871,
+          "min": 3.7906249999650754,
+          "max": 44.60483299772022,
+          "stdev": 9.738849358699534,
           "errors": 0,
           "error_samples": []
         }
@@ -1036,44 +1294,44 @@
       "concurrency": [
         {
           "clients": 1,
-          "duration_seconds": 20.01,
+          "duration_seconds": 20.0,
           "read_ratio": 0.8,
-          "total_operations": 29151,
-          "reads": 23320,
-          "writes": 5831,
+          "total_operations": 25767,
+          "reads": 20636,
+          "writes": 5131,
           "errors": 0,
-          "throughput_qps": 1457.1,
-          "p50_ms": 0.48,
-          "p95_ms": 1.4,
-          "p99_ms": 3.44,
+          "throughput_qps": 1288.2,
+          "p50_ms": 0.66,
+          "p95_ms": 1.24,
+          "p99_ms": 1.7,
           "error_samples": []
         },
         {
           "clients": 10,
-          "duration_seconds": 20.02,
+          "duration_seconds": 20.0,
           "read_ratio": 0.8,
-          "total_operations": 33158,
-          "reads": 26754,
-          "writes": 6404,
+          "total_operations": 34597,
+          "reads": 27911,
+          "writes": 6686,
           "errors": 0,
-          "throughput_qps": 1656.0,
-          "p50_ms": 1.61,
-          "p95_ms": 64.1,
-          "p99_ms": 76.58,
+          "throughput_qps": 1729.5,
+          "p50_ms": 1.63,
+          "p95_ms": 66.08,
+          "p99_ms": 77.07,
           "error_samples": []
         },
         {
           "clients": 40,
-          "duration_seconds": 20.03,
+          "duration_seconds": 20.04,
           "read_ratio": 0.8,
-          "total_operations": 32605,
-          "reads": 26191,
-          "writes": 6414,
-          "errors": 465,
-          "throughput_qps": 1627.4,
-          "p50_ms": 6.78,
-          "p95_ms": 84.42,
-          "p99_ms": 98.68,
+          "total_operations": 33596,
+          "reads": 27002,
+          "writes": 6594,
+          "errors": 869,
+          "throughput_qps": 1676.5,
+          "p50_ms": 6.79,
+          "p95_ms": 85.04,
+          "p99_ms": 92.59,
           "error_samples": [
             "ResponseError: Max pending queries exceeded",
             "ResponseError: Max pending queries exceeded",
@@ -1085,68 +1343,68 @@
         "1-hop": {
           "runs": 3,
           "p50_values": [
-            0.609,
-            0.464,
-            0.562
+            1.132,
+            0.944,
+            0.65
           ],
-          "p50_mean": 0.545,
-          "p50_spread": 0.145,
-          "p50_spread_pct": 26.6
+          "p50_mean": 0.909,
+          "p50_spread": 0.482,
+          "p50_spread_pct": 53.1
         },
         "2-hop": {
           "runs": 3,
           "p50_values": [
-            0.466,
-            0.594,
-            0.536
+            0.917,
+            0.925,
+            0.973
           ],
-          "p50_mean": 0.532,
-          "p50_spread": 0.129,
-          "p50_spread_pct": 24.2
+          "p50_mean": 0.938,
+          "p50_spread": 0.056,
+          "p50_spread_pct": 6.0
         },
         "3-hop": {
           "runs": 3,
           "p50_values": [
-            0.931,
-            1.139,
-            1.077
+            1.456,
+            1.352,
+            1.445
           ],
-          "p50_mean": 1.049,
-          "p50_spread": 0.208,
-          "p50_spread_pct": 19.8
+          "p50_mean": 1.418,
+          "p50_spread": 0.104,
+          "p50_spread_pct": 7.3
         },
         "point-lookup": {
           "runs": 3,
           "p50_values": [
-            1.666,
-            0.526,
-            0.337
+            0.931,
+            0.754,
+            0.636
           ],
-          "p50_mean": 0.843,
-          "p50_spread": 1.329,
-          "p50_spread_pct": 157.6
+          "p50_mean": 0.774,
+          "p50_spread": 0.295,
+          "p50_spread_pct": 38.1
         },
         "filtered-lookup": {
           "runs": 3,
           "p50_values": [
-            1.196,
-            0.768,
-            0.581
+            0.981,
+            1.105,
+            1.11
           ],
-          "p50_mean": 0.848,
-          "p50_spread": 0.614,
-          "p50_spread_pct": 72.4
+          "p50_mean": 1.065,
+          "p50_spread": 0.129,
+          "p50_spread_pct": 12.1
         },
         "aggregation": {
           "runs": 3,
           "p50_values": [
-            3.863,
-            3.709,
-            3.889
+            4.923,
+            4.817,
+            4.626
           ],
-          "p50_mean": 3.821,
-          "p50_spread": 0.18,
-          "p50_spread_pct": 4.7
+          "p50_mean": 4.789,
+          "p50_spread": 0.298,
+          "p50_spread_pct": 6.2
         }
       },
       "errors": [],
