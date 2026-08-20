@@ -6,7 +6,7 @@ COMPOSE := docker compose -f docker/docker-compose.yml
 export PYTHONPATH := src
 
 .DEFAULT_GOAL := help
-.PHONY: help setup up down dataset bench quick report test clean logs stats
+.PHONY: help setup up down fresh dataset bench quick report test clean logs stats
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -22,6 +22,10 @@ up: ## Start the local platforms, each capped to the parity tier
 	$(COMPOSE) up -d
 	@echo "Waiting for platforms to accept connections..."
 	@$(PY) scripts/wait_for_platforms.py
+
+fresh: ## Recreate the local platforms from empty volumes (recommended before a reporting run)
+	$(COMPOSE) down -v
+	$(MAKE) up
 
 down: ## Stop and remove the local platforms and their volumes
 	$(COMPOSE) down -v

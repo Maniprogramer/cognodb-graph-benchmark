@@ -87,19 +87,39 @@ class BoltAdapter(GraphAdapter):
 
     def reset(self) -> None:
         if self.flavor == "memgraph":
-            self._run("MATCH (n) DETACH DELETE n")
+            # Batched for the same reason as Neo4j below. Memgraph is an
+            # in-memory engine, so a single delete of the whole graph has to
+            # hold the entire transaction delta in the same 256 MB the data
+            # already occupies.
+            for statement in (
+                "MATCH ()-[r]->() WITH r LIMIT $limit DELETE r RETURN count(r) AS c",
+                "MATCH (n) WITH n LIMIT $limit DELETE n RETURN count(n) AS c",
+            ):
+                while True:
+                    rows = self._run(statement, limit=1000)
+                    if not rows or rows[0]["c"] == 0:
+                        break
             for stmt in self._existing_memgraph_indexes():
                 self._run(stmt)
             return
-        # Neo4j: delete in batches so a large graph does not blow the heap in
-        # one transaction. On a 256 MB instance a single DETACH DELETE of
-        # 350k relationships reliably runs out of memory.
-        while True:
-            rows = self._run(
-                "MATCH (n) WITH n LIMIT 10000 DETACH DELETE n RETURN count(n) AS c"
-            )
-            if not rows or rows[0]["c"] == 0:
-                break
+        # Neo4j: delete relationships first, then nodes, in small batches.
+        #
+        # DETACH DELETE on a node also loads and deletes all of its
+        # relationships inside the same transaction, so on a dense node it
+        # builds a very large transaction state. With a 96 MB heap this does
+        # not merely run slowly -- an earlier version of this method using
+        # 10,000-node DETACH DELETE batches drove the JVM into
+        # OutOfMemoryError partway through the reset, leaving the container
+        # running but the database dead. Deleting relationships separately in
+        # 1,000-row batches keeps each transaction small enough to survive.
+        for statement in (
+            "MATCH ()-[r]->() WITH r LIMIT $limit DELETE r RETURN count(r) AS c",
+            "MATCH (n) WITH n LIMIT $limit DELETE n RETURN count(n) AS c",
+        ):
+            while True:
+                rows = self._run(statement, limit=1000)
+                if not rows or rows[0]["c"] == 0:
+                    break
         for name in self._existing_neo4j_indexes():
             self._run(f"DROP INDEX {name} IF EXISTS")
 
