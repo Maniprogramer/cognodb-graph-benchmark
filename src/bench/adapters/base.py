@@ -198,14 +198,25 @@ class GraphAdapter(ABC):
             return list(candidates)
         return rng.sample(candidates, count)
 
-    def warmup(self, start_nodes: list[int], iterations: int) -> None:
-        """Touch every workload before measurement so caches are populated."""
+    def warmup(self, start_nodes: list[int], iterations: int, plan=None) -> None:
+        """Touch **every** measured workload before timing begins.
+
+        All six matter, and the expensive ones matter most: 3-hop traversal
+        touches the largest share of the graph, so leaving it out of warm-up
+        would mean the first measured iterations pay for cache misses that the
+        rest do not, inflating its p95 on disk-backed engines specifically.
+        Warming a subset does not just add noise -- it biases the comparison
+        toward in-memory engines.
+        """
         for i in range(iterations):
             node = start_nodes[i % len(start_nodes)]
             self.one_hop(node)
             self.two_hop(node)
+            self.three_hop(node)
             self.point_lookup(node)
-        self.aggregation()
+            if plan is not None:
+                self.filtered_lookup(plan.filtered_min_degree, plan.filtered_year)
+            self.aggregation()
 
     @contextmanager
     def timed(self):

@@ -198,7 +198,7 @@ def run_platform(
         run.cold_start_ms = measure_cold_start(adapter, plan)
 
         log(f"  {platform_cfg.name}: warming up ({settings['warmup_iterations']} iterations)")
-        adapter.warmup(plan.start_nodes, settings["warmup_iterations"])
+        adapter.warmup(plan.start_nodes, settings["warmup_iterations"], plan)
 
         repeats = settings.get("repeats", 1)
         all_runs: list[dict] = []

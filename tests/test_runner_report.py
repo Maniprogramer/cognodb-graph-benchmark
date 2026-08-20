@@ -275,3 +275,44 @@ class TestReadmeInjection:
 
         sample_results["parity_check"]["status"] = "MISMATCH"
         assert "Result parity FAILED" in build_results_section(sample_results)
+
+
+class TestWarmup:
+    """Warming a subset of workloads biases the comparison, so all six run."""
+
+    class RecordingAdapter:
+        def __init__(self):
+            self.touched = set()
+
+        def one_hop(self, n): self.touched.add("1-hop"); return 1
+        def two_hop(self, n): self.touched.add("2-hop"); return 1
+        def three_hop(self, n): self.touched.add("3-hop"); return 1
+        def point_lookup(self, n): self.touched.add("point-lookup"); return 1
+        def filtered_lookup(self, d, y): self.touched.add("filtered-lookup"); return 1
+        def aggregation(self): self.touched.add("aggregation"); return 1
+
+    def _adapter(self):
+        from bench.adapters.base import GraphAdapter
+
+        adapter = self.RecordingAdapter()
+        adapter.warmup = GraphAdapter.warmup.__get__(adapter)
+        return adapter
+
+    def test_every_measured_workload_is_warmed(self):
+        from bench.workloads import READ_WORKLOADS
+
+        adapter = self._adapter()
+        adapter.warmup([1, 2, 3], iterations=2, plan=FakePlan())
+        assert adapter.touched == set(READ_WORKLOADS)
+
+    def test_expensive_traversal_included(self):
+        adapter = self._adapter()
+        adapter.warmup([1], iterations=1, plan=FakePlan())
+        assert "3-hop" in adapter.touched
+
+    def test_works_without_a_plan(self):
+        # filtered_lookup needs plan constants; the rest must still warm.
+        adapter = self._adapter()
+        adapter.warmup([1], iterations=1, plan=None)
+        assert "3-hop" in adapter.touched
+        assert "filtered-lookup" not in adapter.touched
