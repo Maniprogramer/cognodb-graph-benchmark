@@ -1,0 +1,1156 @@
+{
+  "run_id": "20260820T155856Z",
+  "environment": {
+    "hostname": "Manikantas-MacBook-Air.local",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "cpu_count": 8,
+    "python": "3.13.6",
+    "timestamp_utc": "2026-08-20T15:58:56.752970+00:00"
+  },
+  "parity_tier": {
+    "vcpu": "0.5 vCPU (burstable)",
+    "ram": "256 MB",
+    "storage": "1 GB"
+  },
+  "settings": {
+    "batch_size": 10000,
+    "iterations": 100,
+    "warmup_iterations": 20,
+    "seed": 1337,
+    "repeats": 3,
+    "concurrency_levels": [
+      1,
+      10,
+      40
+    ],
+    "concurrency_seconds": 20.0,
+    "read_ratio": 0.8
+  },
+  "dataset": {
+    "name": "SNAP cit-HepTh (arXiv HEP-Th citation network)",
+    "source_url": "https://snap.stanford.edu/data/cit-HepTh.html",
+    "node_count": 27769,
+    "relationship_count": 352768,
+    "sampled": false,
+    "sample_seed": null,
+    "nodes_with_known_year": 11444,
+    "year_coverage_pct": 41.2,
+    "nodes_csv_sha256": "1f3b0b5d41e8b2f27e885584adb214547798e8dde360bc7474a86f6de21b149e",
+    "edges_csv_sha256": "0907ed5b2117de9ddaaff8906b9e122a443f1c9b0c03e0b2b574912020bc1bba"
+  },
+  "plan": {
+    "start_node_count": 100,
+    "start_nodes_sample": [
+      2242,
+      3156,
+      3181,
+      4133,
+      7106
+    ],
+    "point_lookup_count": 100,
+    "filtered_min_degree": 19,
+    "filtered_year": 2001,
+    "write_pair_count": 1000,
+    "seed": 1337
+  },
+  "parity_check": {
+    "status": "pass",
+    "workloads": {
+      "1-hop": {
+        "values": {
+          "Neo4j": 1669,
+          "Memgraph": 1669,
+          "ArangoDB": 1669,
+          "FalkorDB": 1669
+        },
+        "agree": true
+      },
+      "2-hop": {
+        "values": {
+          "Neo4j": 18013,
+          "Memgraph": 18013,
+          "ArangoDB": 18013,
+          "FalkorDB": 18013
+        },
+        "agree": true
+      },
+      "3-hop": {
+        "values": {
+          "Neo4j": 95111,
+          "Memgraph": 95111,
+          "ArangoDB": 95111,
+          "FalkorDB": 95111
+        },
+        "agree": true
+      },
+      "point-lookup": {
+        "values": {
+          "Neo4j": 100,
+          "Memgraph": 100,
+          "ArangoDB": 100,
+          "FalkorDB": 100
+        },
+        "agree": true
+      },
+      "filtered-lookup": {
+        "values": {
+          "Neo4j": 114100,
+          "Memgraph": 114100,
+          "ArangoDB": 114100,
+          "FalkorDB": 114100
+        },
+        "agree": true
+      },
+      "aggregation": {
+        "values": {
+          "Neo4j": 1200,
+          "Memgraph": 1200,
+          "ArangoDB": 1200,
+          "FalkorDB": 1200
+        },
+        "agree": true
+      }
+    }
+  },
+  "platforms": [
+    {
+      "id": "cognodb",
+      "name": "CognoDB Cloud",
+      "query_language": "unknown",
+      "spec": {
+        "tier": "Free (c0)",
+        "vcpu": "0.5 vCPU (burstable)",
+        "ram": "256 MB",
+        "storage": "1 GB",
+        "region": "not recorded",
+        "notes": "Managed cloud instance. Specs are those advertised by the CognoDB console for the free c0 tier; they are not independently verifiable from the client side."
+      },
+      "indexes": [],
+      "load": null,
+      "verification": null,
+      "cold_start_ms": {},
+      "workloads": {},
+      "workload_results": {},
+      "concurrency": [],
+      "variance": {},
+      "errors": [],
+      "skipped": "not configured (missing: uri, password)"
+    },
+    {
+      "id": "neo4j",
+      "name": "Neo4j",
+      "query_language": "Cypher (Bolt)",
+      "spec": {
+        "vcpu": "0.5 vCPU (cgroup cpu quota)",
+        "ram": "256 MB (cgroup memory limit)",
+        "storage": "1 GB (dataset well under limit)",
+        "tier": "Community 5.26, container-capped to parity tier",
+        "region": "local",
+        "notes": "JVM heap capped at 96 MB and page cache at 64 MB so the process fits inside the 256 MB container limit without being OOM-killed.",
+        "observable": {
+          "status": "not observable (JMX store metrics unavailable on this tier)"
+        }
+      },
+      "indexes": [
+        "Paper.paper_id",
+        "Paper.year",
+        "Paper.degree"
+      ],
+      "load": {
+        "nodes_loaded": 27769,
+        "relationships_loaded": 352768,
+        "node_seconds": 50.057,
+        "relationship_seconds": 140.096,
+        "total_seconds": 190.153,
+        "nodes_per_second": 554.7,
+        "relationships_per_second": 2518.0,
+        "method": "official neo4j driver, UNWIND batching (batch=10000)"
+      },
+      "verification": {
+        "nodes_expected": 27769,
+        "nodes_actual": 27769,
+        "relationships_expected": 352768,
+        "relationships_actual": 352768,
+        "complete": true
+      },
+      "cold_start_ms": {
+        "1-hop": 2044.578,
+        "2-hop": 1934.469,
+        "3-hop": 2002.129,
+        "point-lookup": 608.443,
+        "filtered-lookup": 1695.926,
+        "aggregation": 806.676
+      },
+      "workloads": {
+        "1-hop": {
+          "workload": "1-hop",
+          "iterations": 100,
+          "p50": 5.059791998064611,
+          "p95": 70.81216599908657,
+          "p99": 81.80954199633561,
+          "mean": 15.02773702981358,
+          "min": 2.656666998518631,
+          "max": 92.62104200024623,
+          "stdev": 23.467727480192988,
+          "errors": 0,
+          "error_samples": []
+        },
+        "2-hop": {
+          "workload": "2-hop",
+          "iterations": 100,
+          "p50": 4.550292003841605,
+          "p95": 65.71795800118707,
+          "p99": 72.58883300528396,
+          "mean": 12.950982510010363,
+          "min": 2.355208998778835,
+          "max": 99.88291599438526,
+          "stdev": 21.23648869296514,
+          "errors": 0,
+          "error_samples": []
+        },
+        "3-hop": {
+          "workload": "3-hop",
+          "iterations": 100,
+          "p50": 6.820292001066264,
+          "p95": 96.89174999948591,
+          "p99": 119.28204199648462,
+          "mean": 30.780245020214352,
+          "min": 2.2593329995288514,
+          "max": 205.49250000476604,
+          "stdev": 40.5447642005175,
+          "errors": 0,
+          "error_samples": []
+        },
+        "point-lookup": {
+          "workload": "point-lookup",
+          "iterations": 100,
+          "p50": 3.334792003442999,
+          "p95": 72.52212500316091,
+          "p99": 83.5037500000908,
+          "mean": 10.978643710186589,
+          "min": 1.6207500011660159,
+          "max": 90.8226250030566,
+          "stdev": 21.713093427908426,
+          "errors": 0,
+          "error_samples": []
+        },
+        "filtered-lookup": {
+          "workload": "filtered-lookup",
+          "iterations": 100,
+          "p50": 6.862374997581355,
+          "p95": 85.5235420021927,
+          "p99": 104.46520799450809,
+          "mean": 22.004979539997294,
+          "min": 3.8637090037809685,
+          "max": 228.58204099611612,
+          "stdev": 34.668052932400705,
+          "errors": 0,
+          "error_samples": []
+        },
+        "aggregation": {
+          "workload": "aggregation",
+          "iterations": 100,
+          "p50": 11.022207996575162,
+          "p95": 96.7529170011403,
+          "p99": 180.3650000001653,
+          "mean": 33.97931375038752,
+          "min": 6.58929199562408,
+          "max": 193.34604200412286,
+          "stdev": 38.596873217448575,
+          "errors": 0,
+          "error_samples": []
+        }
+      },
+      "workload_results": {
+        "1-hop": 1669,
+        "2-hop": 18013,
+        "3-hop": 95111,
+        "point-lookup": 100,
+        "filtered-lookup": 114100,
+        "aggregation": 1200
+      },
+      "concurrency": [
+        {
+          "clients": 1,
+          "duration_seconds": 20.0,
+          "read_ratio": 0.8,
+          "total_operations": 2310,
+          "reads": 1865,
+          "writes": 445,
+          "errors": 0,
+          "throughput_qps": 115.5,
+          "p50_ms": 2.56,
+          "p95_ms": 57.0,
+          "p99_ms": 82.66,
+          "error_samples": []
+        },
+        {
+          "clients": 10,
+          "duration_seconds": 20.02,
+          "read_ratio": 0.8,
+          "total_operations": 1584,
+          "reads": 1273,
+          "writes": 311,
+          "errors": 0,
+          "throughput_qps": 79.1,
+          "p50_ms": 97.53,
+          "p95_ms": 341.65,
+          "p99_ms": 896.34,
+          "error_samples": []
+        },
+        {
+          "clients": 40,
+          "duration_seconds": 20.8,
+          "read_ratio": 0.8,
+          "total_operations": 3097,
+          "reads": 2477,
+          "writes": 620,
+          "errors": 7,
+          "throughput_qps": 148.9,
+          "p50_ms": 194.67,
+          "p95_ms": 502.04,
+          "p99_ms": 789.83,
+          "error_samples": [
+            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 68.0 MiB. dbms.memory.transaction.total.max threshold reached}",
+            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 74.0 MiB. dbms.memory.transaction.total.max threshold reached}",
+            "TransientError: {code: Neo.TransientError.General.MemoryPoolOutOfMemoryError} {message: The allocation of an extra 2.0 MiB would use more than the limit 67.2 MiB. Currently using 70.0 MiB. dbms.memory.transaction.total.max threshold reached}"
+          ]
+        }
+      ],
+      "variance": {
+        "1-hop": {
+          "runs": 3,
+          "p50_values": [
+            5.06,
+            3.645,
+            2.873
+          ],
+          "p50_mean": 3.859,
+          "p50_spread": 2.187,
+          "p50_spread_pct": 56.7
+        },
+        "2-hop": {
+          "runs": 3,
+          "p50_values": [
+            4.55,
+            2.867,
+            3.729
+          ],
+          "p50_mean": 3.715,
+          "p50_spread": 1.684,
+          "p50_spread_pct": 45.3
+        },
+        "3-hop": {
+          "runs": 3,
+          "p50_values": [
+            6.82,
+            6.0,
+            6.089
+          ],
+          "p50_mean": 6.303,
+          "p50_spread": 0.82,
+          "p50_spread_pct": 13.0
+        },
+        "point-lookup": {
+          "runs": 3,
+          "p50_values": [
+            3.335,
+            2.913,
+            1.985
+          ],
+          "p50_mean": 2.744,
+          "p50_spread": 1.35,
+          "p50_spread_pct": 49.2
+        },
+        "filtered-lookup": {
+          "runs": 3,
+          "p50_values": [
+            6.862,
+            6.019,
+            6.214
+          ],
+          "p50_mean": 6.365,
+          "p50_spread": 0.843,
+          "p50_spread_pct": 13.3
+        },
+        "aggregation": {
+          "runs": 3,
+          "p50_values": [
+            11.022,
+            18.717,
+            8.489
+          ],
+          "p50_mean": 12.743,
+          "p50_spread": 10.228,
+          "p50_spread_pct": 80.3
+        }
+      },
+      "errors": [],
+      "skipped": null
+    },
+    {
+      "id": "memgraph",
+      "name": "Memgraph",
+      "query_language": "Cypher (Bolt)",
+      "spec": {
+        "vcpu": "0.5 vCPU (cgroup cpu quota)",
+        "ram": "256 MB (cgroup memory limit)",
+        "storage": "1 GB",
+        "tier": "Memgraph 2.22 (in-memory transactional), container-capped",
+        "region": "local",
+        "notes": "In-memory engine. The 256 MB cap is a harder constraint here than for disk-backed engines, since the working set cannot spill.",
+        "observable": {
+          "memory_res": "184.53MiB",
+          "disk_usage": "24.99MiB",
+          "vertex_count": 27769,
+          "edge_count": 352768
+        }
+      },
+      "indexes": [
+        "Paper.paper_id",
+        "Paper.year",
+        "Paper.degree"
+      ],
+      "load": {
+        "nodes_loaded": 27769,
+        "relationships_loaded": 352768,
+        "node_seconds": 4.48,
+        "relationship_seconds": 10.105,
+        "total_seconds": 14.585,
+        "nodes_per_second": 6199.0,
+        "relationships_per_second": 34908.6,
+        "method": "official neo4j driver, UNWIND batching (batch=10000)"
+      },
+      "verification": {
+        "nodes_expected": 27769,
+        "nodes_actual": 27769,
+        "relationships_expected": 352768,
+        "relationships_actual": 352768,
+        "complete": true
+      },
+      "cold_start_ms": {
+        "1-hop": 13.778,
+        "2-hop": 5.68,
+        "3-hop": 13.928,
+        "point-lookup": 1.289,
+        "filtered-lookup": 4.273,
+        "aggregation": 11.512
+      },
+      "workloads": {
+        "1-hop": {
+          "workload": "1-hop",
+          "iterations": 100,
+          "p50": 0.8819580034469254,
+          "p95": 3.044208002393134,
+          "p99": 11.581291000766214,
+          "mean": 1.4480787298816722,
+          "min": 0.4126249987166375,
+          "max": 26.381499999843072,
+          "stdev": 2.8138556443291485,
+          "errors": 0,
+          "error_samples": []
+        },
+        "2-hop": {
+          "workload": "2-hop",
+          "iterations": 100,
+          "p50": 0.5701249974663369,
+          "p95": 1.2992089978069998,
+          "p99": 2.2080830021877773,
+          "mean": 0.6827220699051395,
+          "min": 0.33554200490470976,
+          "max": 2.5323340014438145,
+          "stdev": 0.3696095621374512,
+          "errors": 0,
+          "error_samples": []
+        },
+        "3-hop": {
+          "workload": "3-hop",
+          "iterations": 100,
+          "p50": 1.4388330018846318,
+          "p95": 7.300416997168213,
+          "p99": 35.09170900360914,
+          "mean": 2.9843567100033397,
+          "min": 0.44358299783198163,
+          "max": 45.72179200476967,
+          "stdev": 5.952790865291863,
+          "errors": 0,
+          "error_samples": []
+        },
+        "point-lookup": {
+          "workload": "point-lookup",
+          "iterations": 100,
+          "p50": 0.5763329972978681,
+          "p95": 1.207916000566911,
+          "p99": 1.9753750020754524,
+          "mean": 0.8846862298378255,
+          "min": 0.3308750019641593,
+          "max": 24.065042001893744,
+          "stdev": 2.35999242875797,
+          "errors": 0,
+          "error_samples": []
+        },
+        "filtered-lookup": {
+          "workload": "filtered-lookup",
+          "iterations": 100,
+          "p50": 1.1061249970225617,
+          "p95": 4.281374996935483,
+          "p99": 11.305958003504202,
+          "mean": 1.7147749897412723,
+          "min": 0.7839169993530959,
+          "max": 13.31141699483851,
+          "stdev": 1.8492834557708735,
+          "errors": 0,
+          "error_samples": []
+        },
+        "aggregation": {
+          "workload": "aggregation",
+          "iterations": 100,
+          "p50": 7.8981249971548095,
+          "p95": 74.40066699928138,
+          "p99": 99.34812499705004,
+          "mean": 18.034180740069132,
+          "min": 5.08224999794038,
+          "max": 107.81704200053355,
+          "stdev": 22.67454766886265,
+          "errors": 0,
+          "error_samples": []
+        }
+      },
+      "workload_results": {
+        "1-hop": 1669,
+        "2-hop": 18013,
+        "3-hop": 95111,
+        "point-lookup": 100,
+        "filtered-lookup": 114100,
+        "aggregation": 1200
+      },
+      "concurrency": [
+        {
+          "clients": 1,
+          "duration_seconds": 20.0,
+          "read_ratio": 0.8,
+          "total_operations": 17646,
+          "reads": 14142,
+          "writes": 3504,
+          "errors": 0,
+          "throughput_qps": 882.1,
+          "p50_ms": 0.68,
+          "p95_ms": 2.57,
+          "p99_ms": 7.28,
+          "error_samples": []
+        },
+        {
+          "clients": 10,
+          "duration_seconds": 20.0,
+          "read_ratio": 0.8,
+          "total_operations": 30545,
+          "reads": 24631,
+          "writes": 5914,
+          "errors": 1,
+          "throughput_qps": 1526.9,
+          "p50_ms": 2.79,
+          "p95_ms": 44.53,
+          "p99_ms": 63.18,
+          "error_samples": [
+            "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}"
+          ]
+        },
+        {
+          "clients": 40,
+          "duration_seconds": 20.01,
+          "read_ratio": 0.8,
+          "total_operations": 28137,
+          "reads": 22576,
+          "writes": 5561,
+          "errors": 2,
+          "throughput_qps": 1406.1,
+          "p50_ms": 13.13,
+          "p95_ms": 85.75,
+          "p99_ms": 169.44,
+          "error_samples": [
+            "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}",
+            "TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Cannot resolve conflicting transactions. You can retry this transaction when the conflicting transaction is finished}"
+          ]
+        }
+      ],
+      "variance": {
+        "1-hop": {
+          "runs": 3,
+          "p50_values": [
+            0.882,
+            0.902,
+            1.129
+          ],
+          "p50_mean": 0.971,
+          "p50_spread": 0.247,
+          "p50_spread_pct": 25.4
+        },
+        "2-hop": {
+          "runs": 3,
+          "p50_values": [
+            0.57,
+            0.749,
+            1.086
+          ],
+          "p50_mean": 0.802,
+          "p50_spread": 0.516,
+          "p50_spread_pct": 64.4
+        },
+        "3-hop": {
+          "runs": 3,
+          "p50_values": [
+            1.439,
+            1.553,
+            1.862
+          ],
+          "p50_mean": 1.618,
+          "p50_spread": 0.423,
+          "p50_spread_pct": 26.1
+        },
+        "point-lookup": {
+          "runs": 3,
+          "p50_values": [
+            0.576,
+            0.505,
+            0.533
+          ],
+          "p50_mean": 0.538,
+          "p50_spread": 0.071,
+          "p50_spread_pct": 13.2
+        },
+        "filtered-lookup": {
+          "runs": 3,
+          "p50_values": [
+            1.106,
+            0.928,
+            1.041
+          ],
+          "p50_mean": 1.025,
+          "p50_spread": 0.178,
+          "p50_spread_pct": 17.4
+        },
+        "aggregation": {
+          "runs": 3,
+          "p50_values": [
+            7.898,
+            6.459,
+            6.434
+          ],
+          "p50_mean": 6.93,
+          "p50_spread": 1.464,
+          "p50_spread_pct": 21.1
+        }
+      },
+      "errors": [],
+      "skipped": null
+    },
+    {
+      "id": "arangodb",
+      "name": "ArangoDB",
+      "query_language": "AQL",
+      "spec": {
+        "vcpu": "0.5 vCPU (cgroup cpu quota)",
+        "ram": "256 MB (cgroup memory limit)",
+        "storage": "1 GB",
+        "tier": "ArangoDB 3.11 Community, container-capped",
+        "region": "local",
+        "notes": "Multi-model engine queried with AQL rather than Cypher. Observed sitting at the memory ceiling at idle, so its results carry the most memory-pressure risk of the set.",
+        "observable": {
+          "papers_documents": 27769,
+          "papers_documents_bytes": 2308774,
+          "cites_documents": 352768,
+          "cites_documents_bytes": 31364366,
+          "index_bytes": 39603478,
+          "total_stored_bytes": 73276618
+        }
+      },
+      "indexes": [
+        "papers.paper_id",
+        "papers.year",
+        "papers.degree"
+      ],
+      "load": {
+        "nodes_loaded": 27769,
+        "relationships_loaded": 352768,
+        "node_seconds": 1.906,
+        "relationship_seconds": 14.627,
+        "total_seconds": 16.532,
+        "nodes_per_second": 14572.6,
+        "relationships_per_second": 24118.3,
+        "method": "python-arango insert_many batching (batch=10000)"
+      },
+      "verification": {
+        "nodes_expected": 27769,
+        "nodes_actual": 27769,
+        "relationships_expected": 352768,
+        "relationships_actual": 352768,
+        "complete": true
+      },
+      "cold_start_ms": {
+        "1-hop": 16.608,
+        "2-hop": 8.549,
+        "3-hop": 156.053,
+        "point-lookup": 5.099,
+        "filtered-lookup": 6.492,
+        "aggregation": 14.756
+      },
+      "workloads": {
+        "1-hop": {
+          "workload": "1-hop",
+          "iterations": 100,
+          "p50": 2.795833002892323,
+          "p95": 5.885874998057261,
+          "p99": 8.351124997716397,
+          "mean": 3.3093615993857384,
+          "min": 1.730457996018231,
+          "max": 8.447833999525756,
+          "stdev": 1.3094688506166252,
+          "errors": 0,
+          "error_samples": []
+        },
+        "2-hop": {
+          "workload": "2-hop",
+          "iterations": 100,
+          "p50": 4.5088330007274635,
+          "p95": 69.61845800105948,
+          "p99": 83.51266699901316,
+          "mean": 9.684452069705003,
+          "min": 1.9982500016340055,
+          "max": 100.27429200272309,
+          "stdev": 18.455707856473268,
+          "errors": 0,
+          "error_samples": []
+        },
+        "3-hop": {
+          "workload": "3-hop",
+          "iterations": 100,
+          "p50": 66.44795800093561,
+          "p95": 383.2967499984079,
+          "p99": 488.720707995526,
+          "mean": 101.16759505042864,
+          "min": 1.84116700256709,
+          "max": 672.7765000032377,
+          "stdev": 128.65422847358406,
+          "errors": 0,
+          "error_samples": []
+        },
+        "point-lookup": {
+          "workload": "point-lookup",
+          "iterations": 100,
+          "p50": 2.653833005751949,
+          "p95": 5.062333002570085,
+          "p99": 9.121166993281804,
+          "mean": 2.978721649997169,
+          "min": 1.6955829996732064,
+          "max": 10.391374999016989,
+          "stdev": 1.3086925141155048,
+          "errors": 0,
+          "error_samples": []
+        },
+        "filtered-lookup": {
+          "workload": "filtered-lookup",
+          "iterations": 100,
+          "p50": 6.872707999718841,
+          "p95": 22.509665999677964,
+          "p99": 37.96604200033471,
+          "mean": 9.090712489996804,
+          "min": 5.460458000015933,
+          "max": 47.423125004570466,
+          "stdev": 6.708908923282725,
+          "errors": 0,
+          "error_samples": []
+        },
+        "aggregation": {
+          "workload": "aggregation",
+          "iterations": 100,
+          "p50": 8.929957999498583,
+          "p95": 36.58516699942993,
+          "p99": 40.657083998667076,
+          "mean": 12.713610830178368,
+          "min": 7.222332998935599,
+          "max": 55.79083400516538,
+          "stdev": 9.657392913769405,
+          "errors": 0,
+          "error_samples": []
+        }
+      },
+      "workload_results": {
+        "1-hop": 1669,
+        "2-hop": 18013,
+        "3-hop": 95111,
+        "point-lookup": 100,
+        "filtered-lookup": 114100,
+        "aggregation": 1200
+      },
+      "concurrency": [
+        {
+          "clients": 1,
+          "duration_seconds": 20.0,
+          "read_ratio": 0.8,
+          "total_operations": 6171,
+          "reads": 4957,
+          "writes": 1214,
+          "errors": 0,
+          "throughput_qps": 308.5,
+          "p50_ms": 3.06,
+          "p95_ms": 5.48,
+          "p99_ms": 8.38,
+          "error_samples": []
+        },
+        {
+          "clients": 10,
+          "duration_seconds": 20.0,
+          "read_ratio": 0.8,
+          "total_operations": 28649,
+          "reads": 23143,
+          "writes": 5506,
+          "errors": 0,
+          "throughput_qps": 1432.1,
+          "p50_ms": 5.08,
+          "p95_ms": 22.74,
+          "p99_ms": 40.49,
+          "error_samples": []
+        },
+        {
+          "clients": 40,
+          "duration_seconds": 20.02,
+          "read_ratio": 0.8,
+          "total_operations": 27186,
+          "reads": 21809,
+          "writes": 5377,
+          "errors": 0,
+          "throughput_qps": 1357.9,
+          "p50_ms": 23.47,
+          "p95_ms": 65.14,
+          "p99_ms": 97.1,
+          "error_samples": []
+        }
+      ],
+      "variance": {
+        "1-hop": {
+          "runs": 3,
+          "p50_values": [
+            2.796,
+            3.311,
+            2.536
+          ],
+          "p50_mean": 2.881,
+          "p50_spread": 0.775,
+          "p50_spread_pct": 26.9
+        },
+        "2-hop": {
+          "runs": 3,
+          "p50_values": [
+            4.509,
+            4.71,
+            3.893
+          ],
+          "p50_mean": 4.371,
+          "p50_spread": 0.817,
+          "p50_spread_pct": 18.7
+        },
+        "3-hop": {
+          "runs": 3,
+          "p50_values": [
+            66.448,
+            17.433,
+            17.631
+          ],
+          "p50_mean": 33.837,
+          "p50_spread": 49.015,
+          "p50_spread_pct": 144.9
+        },
+        "point-lookup": {
+          "runs": 3,
+          "p50_values": [
+            2.654,
+            2.271,
+            1.963
+          ],
+          "p50_mean": 2.296,
+          "p50_spread": 0.69,
+          "p50_spread_pct": 30.1
+        },
+        "filtered-lookup": {
+          "runs": 3,
+          "p50_values": [
+            6.873,
+            6.788,
+            6.016
+          ],
+          "p50_mean": 6.559,
+          "p50_spread": 0.857,
+          "p50_spread_pct": 13.1
+        },
+        "aggregation": {
+          "runs": 3,
+          "p50_values": [
+            8.93,
+            8.637,
+            8.328
+          ],
+          "p50_mean": 8.632,
+          "p50_spread": 0.601,
+          "p50_spread_pct": 7.0
+        }
+      },
+      "errors": [],
+      "skipped": null
+    },
+    {
+      "id": "falkordb",
+      "name": "FalkorDB",
+      "query_language": "Cypher (RESP/GraphBLAS)",
+      "spec": {
+        "vcpu": "0.5 vCPU (cgroup cpu quota)",
+        "ram": "256 MB (cgroup memory limit)",
+        "storage": "1 GB",
+        "tier": "FalkorDB 4.2 (Redis module), container-capped",
+        "region": "local",
+        "notes": "Sparse-matrix / GraphBLAS engine inside Redis. Speaks Cypher, so queries stay comparable while the storage engine differs completely.",
+        "observable": {
+          "used_memory_bytes": 32524528,
+          "used_memory_human": "31.02M",
+          "used_memory_peak_bytes": 79801344
+        }
+      },
+      "indexes": [
+        "Paper.paper_id",
+        "Paper.year",
+        "Paper.degree"
+      ],
+      "load": {
+        "nodes_loaded": 27769,
+        "relationships_loaded": 352768,
+        "node_seconds": 2.181,
+        "relationship_seconds": 12.199,
+        "total_seconds": 14.38,
+        "nodes_per_second": 12733.6,
+        "relationships_per_second": 28916.9,
+        "method": "falkordb client, UNWIND batching (batch=10000)"
+      },
+      "verification": {
+        "nodes_expected": 27769,
+        "nodes_actual": 27769,
+        "relationships_expected": 352768,
+        "relationships_actual": 352768,
+        "complete": true
+      },
+      "cold_start_ms": {
+        "1-hop": 376.949,
+        "2-hop": 2.511,
+        "3-hop": 3.016,
+        "point-lookup": 2.968,
+        "filtered-lookup": 17.336,
+        "aggregation": 5.91
+      },
+      "workloads": {
+        "1-hop": {
+          "workload": "1-hop",
+          "iterations": 100,
+          "p50": 0.6092909970902838,
+          "p95": 2.4595840004622005,
+          "p99": 2.89912500011269,
+          "mean": 0.8704983397183241,
+          "min": 0.3067500001634471,
+          "max": 3.074541993555613,
+          "stdev": 0.6603799060327146,
+          "errors": 0,
+          "error_samples": []
+        },
+        "2-hop": {
+          "workload": "2-hop",
+          "iterations": 100,
+          "p50": 0.4656250021071173,
+          "p95": 1.7988339968724176,
+          "p99": 9.047624997037929,
+          "mean": 0.8055829301883932,
+          "min": 0.29675000405404717,
+          "max": 9.081292002520058,
+          "stdev": 1.4144553590845466,
+          "errors": 0,
+          "error_samples": []
+        },
+        "3-hop": {
+          "workload": "3-hop",
+          "iterations": 100,
+          "p50": 0.931167000089772,
+          "p95": 3.5184579974156804,
+          "p99": 36.42858300008811,
+          "mean": 2.084383809560677,
+          "min": 0.35112499608658254,
+          "max": 50.70137500297278,
+          "stdev": 6.147223031841251,
+          "errors": 0,
+          "error_samples": []
+        },
+        "point-lookup": {
+          "workload": "point-lookup",
+          "iterations": 100,
+          "p50": 1.6655829967930913,
+          "p95": 6.759375006367918,
+          "p99": 11.396375004551373,
+          "mean": 2.5759607799409423,
+          "min": 0.3824579980573617,
+          "max": 30.521291999320965,
+          "stdev": 3.5076170619442535,
+          "errors": 0,
+          "error_samples": []
+        },
+        "filtered-lookup": {
+          "workload": "filtered-lookup",
+          "iterations": 100,
+          "p50": 1.195874996483326,
+          "p95": 7.2212499944726005,
+          "p99": 14.588582998840138,
+          "mean": 2.224863710216596,
+          "min": 0.570875003177207,
+          "max": 15.499624998483341,
+          "stdev": 2.814514399844236,
+          "errors": 0,
+          "error_samples": []
+        },
+        "aggregation": {
+          "workload": "aggregation",
+          "iterations": 100,
+          "p50": 3.863291996822227,
+          "p95": 34.379791002720594,
+          "p99": 48.090791002323385,
+          "mean": 7.561124160056352,
+          "min": 3.107707998424303,
+          "max": 126.99733299814397,
+          "stdev": 14.561053618640944,
+          "errors": 0,
+          "error_samples": []
+        }
+      },
+      "workload_results": {
+        "1-hop": 1669,
+        "2-hop": 18013,
+        "3-hop": 95111,
+        "point-lookup": 100,
+        "filtered-lookup": 114100,
+        "aggregation": 1200
+      },
+      "concurrency": [
+        {
+          "clients": 1,
+          "duration_seconds": 20.01,
+          "read_ratio": 0.8,
+          "total_operations": 29151,
+          "reads": 23320,
+          "writes": 5831,
+          "errors": 0,
+          "throughput_qps": 1457.1,
+          "p50_ms": 0.48,
+          "p95_ms": 1.4,
+          "p99_ms": 3.44,
+          "error_samples": []
+        },
+        {
+          "clients": 10,
+          "duration_seconds": 20.02,
+          "read_ratio": 0.8,
+          "total_operations": 33158,
+          "reads": 26754,
+          "writes": 6404,
+          "errors": 0,
+          "throughput_qps": 1656.0,
+          "p50_ms": 1.61,
+          "p95_ms": 64.1,
+          "p99_ms": 76.58,
+          "error_samples": []
+        },
+        {
+          "clients": 40,
+          "duration_seconds": 20.03,
+          "read_ratio": 0.8,
+          "total_operations": 32605,
+          "reads": 26191,
+          "writes": 6414,
+          "errors": 465,
+          "throughput_qps": 1627.4,
+          "p50_ms": 6.78,
+          "p95_ms": 84.42,
+          "p99_ms": 98.68,
+          "error_samples": [
+            "ResponseError: Max pending queries exceeded",
+            "ResponseError: Max pending queries exceeded",
+            "ResponseError: Max pending queries exceeded"
+          ]
+        }
+      ],
+      "variance": {
+        "1-hop": {
+          "runs": 3,
+          "p50_values": [
+            0.609,
+            0.464,
+            0.562
+          ],
+          "p50_mean": 0.545,
+          "p50_spread": 0.145,
+          "p50_spread_pct": 26.6
+        },
+        "2-hop": {
+          "runs": 3,
+          "p50_values": [
+            0.466,
+            0.594,
+            0.536
+          ],
+          "p50_mean": 0.532,
+          "p50_spread": 0.129,
+          "p50_spread_pct": 24.2
+        },
+        "3-hop": {
+          "runs": 3,
+          "p50_values": [
+            0.931,
+            1.139,
+            1.077
+          ],
+          "p50_mean": 1.049,
+          "p50_spread": 0.208,
+          "p50_spread_pct": 19.8
+        },
+        "point-lookup": {
+          "runs": 3,
+          "p50_values": [
+            1.666,
+            0.526,
+            0.337
+          ],
+          "p50_mean": 0.843,
+          "p50_spread": 1.329,
+          "p50_spread_pct": 157.6
+        },
+        "filtered-lookup": {
+          "runs": 3,
+          "p50_values": [
+            1.196,
+            0.768,
+            0.581
+          ],
+          "p50_mean": 0.848,
+          "p50_spread": 0.614,
+          "p50_spread_pct": 72.4
+        },
+        "aggregation": {
+          "runs": 3,
+          "p50_values": [
+            3.863,
+            3.709,
+            3.889
+          ],
+          "p50_mean": 3.821,
+          "p50_spread": 0.18,
+          "p50_spread_pct": 4.7
+        }
+      },
+      "errors": [],
+      "skipped": null
+    }
+  ]
+}
